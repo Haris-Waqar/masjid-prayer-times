@@ -756,18 +756,20 @@ footer a {
   color: var(--danger);
 }
 
-.form-date input,
-.time-field input {
+.form-date input {
+  -webkit-appearance: none;
+  appearance: none;
   background: var(--paper);
   border: 1px solid var(--line);
   border-radius: 11px;
   color: var(--ink);
   min-height: 44px;
   padding: 0 12px;
+  width: 100%;
 }
 
 .form-date input:disabled,
-.time-field input:disabled {
+.time-field-input:disabled {
   cursor: wait;
   opacity: 0.65;
 }
@@ -777,7 +779,7 @@ footer a {
   align-items: center;
   display: grid;
   gap: 16px;
-  grid-template-columns: minmax(0, 1fr) 10.75rem;
+  grid-template-columns: minmax(0, 1fr) minmax(8.5rem, 10.5rem);
 }
 
 .admin-grid-head {
@@ -802,22 +804,70 @@ footer a {
 }
 
 .time-field {
-  cursor: pointer;
   min-width: 0;
-}
-
-.time-field input {
-  cursor: pointer;
-  display: block;
-  max-width: 100%;
-  padding-inline: 12px 8px;
   width: 100%;
 }
 
-.time-field input::-webkit-calendar-picker-indicator {
+.time-field-control {
+  align-items: center;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  min-height: 44px;
+  padding: 0 12px;
+  position: relative;
+  width: 100%;
+}
+
+.time-field-display {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.time-field-icon {
+  color: var(--jade);
+  flex: none;
+  pointer-events: none;
+}
+
+.time-field-input {
+  -webkit-appearance: none;
+  appearance: none;
+  border: 0;
   cursor: pointer;
-  margin-inline-start: 2px;
-  opacity: 1;
+  height: 100%;
+  left: 0;
+  margin: 0;
+  opacity: 0;
+  padding: 0;
+  position: absolute;
+  top: 0;
+  width: 100%;
+}
+
+.time-field-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  height: 100%;
+  left: 0;
+  margin: 0;
+  opacity: 0;
+  padding: 0;
+  position: absolute;
+  top: 0;
+  width: 100%;
+}
+
+.time-field-control:has(.time-field-input:disabled) {
+  opacity: 0.65;
+}
+
+.time-field-control:has(.time-field-input:focus-visible) {
+  outline: 3px solid rgb(45 118 109 / 35%);
+  outline-offset: 3px;
 }
 
 .primary-button {
@@ -1035,6 +1085,11 @@ footer a {
 }
 
 @media (max-width: 520px) {
+  .admin-title {
+    font-size: clamp(2rem, 9vw, 2.8rem);
+    margin-top: 18px;
+  }
+
   .admin-card {
     padding: 18px 14px;
   }
@@ -1045,12 +1100,12 @@ footer a {
 
   .admin-prayer-row {
     gap: 12px;
-    grid-template-columns: minmax(0, 1fr) 9.75rem;
+    grid-template-columns: minmax(0, 1fr) minmax(8.25rem, 9.75rem);
     padding: 12px 2px;
   }
 
-  .time-field input {
-    font-size: 1rem;
+  .time-field-display {
+    font-size: 0.95rem;
   }
 
   .modal {

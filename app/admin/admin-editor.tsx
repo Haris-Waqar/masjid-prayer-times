@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { BellRing, CalendarDays, Save } from "lucide-react";
+import { BellRing, CalendarDays, Clock3, Save } from "lucide-react";
 import { Modal } from "@/app/components/modal";
 import { readApiResponse } from "@/lib/api-response";
 import { displayScheduleDate } from "@/lib/prayer-change-notification";
@@ -186,20 +186,28 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
       {PRAYERS.map((prayer, index) => (
         <div className="admin-prayer-row" key={prayer}>
           <strong>{prayer}</strong>
-          <div className="time-field" onClick={() => openTimePicker(index)}>
+          <div className="time-field">
             <label className="visually-hidden" htmlFor={`${prayer}-jamaat`}>
               {prayer} jamaat
             </label>
-            <input
-              ref={(element) => {
-                timeInputs.current[index] = element;
-              }}
-              id={`${prayer}-jamaat`}
-              type="time"
-              value={times[index].jamaat}
-              onChange={(event) => updateTime(index, event.target.value)}
-              disabled={loadingDate || saving}
-            />
+            <div className="time-field-control">
+              <span className="time-field-display" aria-hidden="true">
+                {formatTime(times[index].jamaat)}
+              </span>
+              <Clock3 className="time-field-icon" size={16} aria-hidden="true" />
+              <input
+                ref={(element) => {
+                  timeInputs.current[index] = element;
+                }}
+                id={`${prayer}-jamaat`}
+                className="time-field-input"
+                type="time"
+                value={times[index].jamaat}
+                onChange={(event) => updateTime(index, event.target.value)}
+                onClick={() => openTimePicker(index)}
+                disabled={loadingDate || saving}
+              />
+            </div>
           </div>
         </div>
       ))}
