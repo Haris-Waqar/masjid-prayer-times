@@ -3,7 +3,11 @@
 import { useRef, useState } from "react";
 import { BellRing, CalendarDays, Save, X } from "lucide-react";
 import { readApiResponse } from "@/lib/api-response";
-import { PRAYERS, type PrayerTime } from "@/lib/prayers";
+import {
+  PRAYERS,
+  havePrayerTimesChanged,
+  type PrayerTime,
+} from "@/lib/prayers";
 
 type Props = {
   initialDate: string;
@@ -13,12 +17,15 @@ type Props = {
 
 export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
   const reviewDialog = useRef<HTMLDialogElement>(null);
+  const timeInputs = useRef<Array<HTMLInputElement | null>>([]);
   const [date, setDate] = useState(initialDate);
   const [times, setTimes] = useState(initialTimes);
+  const [publishedTimes, setPublishedTimes] = useState(initialTimes);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ kind: "success" | "error"; text: string } | null>(
     null,
   );
+  const hasChanges = havePrayerTimesChanged(times, publishedTimes);
 
   function updateTime(index: number, value: string) {
     setTimes((current) =>
@@ -37,6 +44,17 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
     if (!saving) reviewDialog.current?.close();
   }
 
+  function openTimePicker(index: number) {
+    const input = timeInputs.current[index];
+    if (!input) return;
+    input.focus({ preventScroll: true });
+    try {
+      input.showPicker?.();
+    } catch {
+      // The focused native input remains usable when showPicker is unavailable.
+    }
+  }
+
   async function publish() {
     setSaving(true);
     setMessage(null);
@@ -53,6 +71,7 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
       }>(response);
       if (!response.ok) throw new Error(result.error || "The timetable could not be saved.");
       reviewDialog.current?.close();
+      setPublishedTimes(times);
       setMessage({
         kind: "success",
         text:
@@ -91,9 +110,12 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
       {PRAYERS.map((prayer, index) => (
         <div className="admin-prayer-row" key={prayer}>
           <strong>{prayer}</strong>
-          <div className="time-field">
+          <div className="time-field" onClick={() => openTimePicker(index)}>
             <label htmlFor={`${prayer}-jamaat`}>Jamaat</label>
             <input
+              ref={(element) => {
+                timeInputs.current[index] = element;
+              }}
               id={`${prayer}-jamaat`}
               type="time"
               value={times[index].jamaat}
@@ -103,8 +125,13 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
         </div>
       ))}
 
-      <button className="primary-button" type="button" onClick={review} disabled={saving}>
-        <Save size={18} /> Review and publish
+      <button
+        className="primary-button"
+        type="button"
+        onClick={review}
+        disabled={saving || !hasChanges}
+      >
+        <Save size={18} /> {hasChanges ? "Review and publish" : "No changes to publish"}
       </button>
       <p className="updated-note">Signed in as {editorEmail}</p>
       {message?.kind === "success" && (
@@ -144,7 +171,7 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
             <li key={item.prayer}>
               <span>{item.prayer}</span>
               <strong>{formatTime(item.jamaat)}</strong>
-              {item.jamaat !== initialTimes[index]?.jamaat && <small>Changed</small>}
+              {item.jamaat !== publishedTimes[index]?.jamaat && <small>Changed</small>}
             </li>
           ))}
         </ol>

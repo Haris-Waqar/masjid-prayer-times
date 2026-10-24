@@ -10,10 +10,10 @@ import {
   Check,
   MapPin,
   RefreshCw,
-  Settings2,
   Share2,
   WifiOff,
 } from "lucide-react";
+import { NavigationPendingIcon } from "@/app/navigation-pending-icon";
 import type { MosqueSettings, PrayerTime } from "@/lib/prayers";
 
 type Props = {
@@ -21,8 +21,6 @@ type Props = {
   date: string;
   times: PrayerTime[];
   schedulePublished: boolean;
-  isAdmin: boolean;
-  adminHref: string;
 };
 
 type InstallPrompt = Event & {
@@ -58,8 +56,6 @@ export function PrayerDashboard({
   date,
   times,
   schedulePublished,
-  isAdmin,
-  adminHref,
 }: Props) {
   const router = useRouter();
   const [now, setNow] = useState<Date | null>(null);
@@ -248,10 +244,10 @@ export function PrayerDashboard({
         </div>
         <Link
           className="icon-button"
-          href={adminHref}
-          aria-label={isAdmin ? "Open admin editor" : "Admin sign in"}
+          href="/admin"
+          aria-label="Open admin area"
         >
-          <Settings2 size={21} />
+          <NavigationPendingIcon kind="admin" size={21} />
         </Link>
       </header>
 
@@ -409,7 +405,6 @@ export function PrayerDashboard({
 
       <footer>
         <p>Always check the effective date when a prayer time changes.</p>
-        {isAdmin && <Link href="/admin">Edit timetable</Link>}
       </footer>
     </main>
   );

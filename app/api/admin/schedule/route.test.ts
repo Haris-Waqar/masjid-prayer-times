@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { getAuthorizedAdmin } from "@/lib/admin";
 import { notifyPrayerChanges } from "@/lib/push";
 import {
@@ -9,6 +10,7 @@ import { POST } from "@/app/api/admin/schedule/route";
 
 vi.mock("@/lib/admin", () => ({ getAuthorizedAdmin: vi.fn() }));
 vi.mock("@/lib/push", () => ({ notifyPrayerChanges: vi.fn() }));
+vi.mock("next/cache", () => ({ revalidatePath: vi.fn(), revalidateTag: vi.fn() }));
 vi.mock("@/lib/supabase/admin", () => {
   class MockSupabaseAdminConfigurationError extends Error {
     constructor() {
@@ -41,6 +43,7 @@ function request(body: unknown) {
 
 describe("POST /api/admin/schedule", () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     vi.mocked(getAuthorizedAdmin).mockResolvedValue({ email: "imam@example.org" } as never);
   });
 
@@ -92,6 +95,8 @@ describe("POST /api/admin/schedule", () => {
     expect(notifyPrayerChanges).toHaveBeenCalledWith("2026-10-24", [
       { prayer: "Asr", oldJamaat: "16:15", newJamaat: "16:00" },
     ]);
+    expect(revalidateTag).toHaveBeenCalledWith("prayer-schedules", { expire: 0 });
+    expect(revalidatePath).toHaveBeenCalledWith("/", "page");
   });
 
   it("normalizes Supabase time values before publishing", async () => {

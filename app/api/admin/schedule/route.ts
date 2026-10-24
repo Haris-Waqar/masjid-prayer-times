@@ -1,4 +1,6 @@
+import { revalidatePath, revalidateTag } from "next/cache";
 import { getAuthorizedAdmin } from "@/lib/admin";
+import { PRAYER_SCHEDULE_CACHE_TAG } from "@/lib/cache-tags";
 import {
   PRAYERS,
   isPrayerName,
@@ -73,6 +75,8 @@ async function publishSchedule(request: Request) {
   );
 
   const notified = await notifyPrayerChanges(input.date, changes);
+  revalidateTag(PRAYER_SCHEDULE_CACHE_TAG, { expire: 0 });
+  revalidatePath("/", "page");
   return Response.json({ ok: true, changed: changes.length, notified });
 }
 

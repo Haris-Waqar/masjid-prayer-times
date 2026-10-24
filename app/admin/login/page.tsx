@@ -1,13 +1,13 @@
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { LoginForm } from "@/app/admin/login/login-form";
+import { NavigationPendingIcon } from "@/app/navigation-pending-icon";
 
 export default function AdminLoginPage() {
   return (
     <main className="admin-shell">
       <div className="admin-topbar">
         <Link className="back-link" href="/">
-          <ArrowLeft size={17} /> Back to timetable
+          <NavigationPendingIcon kind="back" size={17} /> Back to timetable
         </Link>
       </div>
       <section className="admin-card login-card">

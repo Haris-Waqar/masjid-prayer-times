@@ -176,6 +176,13 @@ input:focus-visible {
   transform: rotate(10deg);
 }
 
+.navigation-icon {
+  align-items: center;
+  display: inline-flex;
+  flex: none;
+  justify-content: center;
+}
+
 .page-grid {
   display: grid;
   gap: 18px;
@@ -192,17 +199,6 @@ input:focus-visible {
   overflow: hidden;
   padding: 30px 28px 28px;
   position: relative;
-}
-
-.next-prayer-panel::after {
-  border: 1px solid rgb(255 255 255 / 11%);
-  border-radius: 50%;
-  content: "";
-  height: 250px;
-  position: absolute;
-  right: -120px;
-  top: 120px;
-  width: 250px;
 }
 
 .arch-line {
@@ -673,8 +669,14 @@ footer a {
 }
 
 .time-field {
+  cursor: pointer;
   display: grid;
   gap: 5px;
+}
+
+.time-field input {
+  cursor: pointer;
+  width: 100%;
 }
 
 .primary-button {
@@ -684,8 +686,8 @@ footer a {
 }
 
 .primary-button:disabled {
-  cursor: wait;
-  opacity: 0.65;
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .form-message {
@@ -814,83 +816,9 @@ footer a {
   width: 100%;
 }
 
-.loading-shell {
-  animation: content-arrive 160ms ease-out both;
-}
-
-.skeleton {
-  animation: skeleton-pulse 1.25s ease-in-out infinite alternate;
-  background: #e3e9e3;
-  border-radius: 10px;
-  display: block;
-}
-
-.skeleton-mark,
-.skeleton-icon {
-  border-radius: 50%;
-  height: 44px;
-  width: 44px;
-}
-
-.skeleton-copy {
-  display: grid;
-  gap: 8px;
-}
-
-.skeleton-line {
-  height: 12px;
-}
-
-.skeleton-line-wide {
-  max-width: 260px;
-  width: min(54vw, 260px);
-}
-
-.skeleton-line-medium {
-  width: min(38vw, 180px);
-}
-
-.skeleton-line-short {
-  width: 92px;
-}
-
-.skeleton-hero {
-  border-radius: 160px 160px 30px 30px;
-  min-height: 430px;
-}
-
-.skeleton-card,
-.skeleton-card-small,
-.skeleton-admin-card {
-  display: grid;
-  gap: 14px;
-}
-
-.skeleton-row {
-  height: 48px;
-  width: 100%;
-}
-
-.skeleton-admin-title {
-  height: 54px;
-  margin: 58px 0 16px;
-  max-width: 360px;
-  width: 66vw;
-}
-
-.skeleton-admin-card {
-  margin-top: 30px;
-}
-
 @keyframes spin {
   to {
     transform: rotate(360deg);
-  }
-}
-
-@keyframes skeleton-pulse {
-  to {
-    background: #eef1ed;
   }
 }
 

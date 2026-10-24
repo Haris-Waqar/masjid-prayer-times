@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { isTime, normalizeTime } from "@/lib/prayers";
+import {
+  havePrayerTimesChanged,
+  isTime,
+  normalizeTime,
+  type PrayerTime,
+} from "@/lib/prayers";
 
 describe("normalizeTime", () => {
   it.each([
@@ -18,4 +23,26 @@ describe("normalizeTime", () => {
       expect(isTime(input)).toBe(false);
     },
   );
+});
+
+describe("havePrayerTimesChanged", () => {
+  const baseline: PrayerTime[] = [
+    { prayer: "Fajr", jamaat: "05:30" },
+    { prayer: "Dhuhr", jamaat: "13:45" },
+    { prayer: "Asr", jamaat: "16:00" },
+    { prayer: "Maghrib", jamaat: "17:25" },
+    { prayer: "Isha", jamaat: "19:30" },
+  ];
+
+  it("returns false when every jamaat time is unchanged", () => {
+    expect(havePrayerTimesChanged(baseline, baseline)).toBe(false);
+  });
+
+  it("returns true when any jamaat time changes", () => {
+    const changed = baseline.map((item) =>
+      item.prayer === "Asr" ? { ...item, jamaat: "16:15" } : item,
+    );
+
+    expect(havePrayerTimesChanged(changed, baseline)).toBe(true);
+  });
 });

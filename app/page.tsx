@@ -2,7 +2,7 @@ import { dateInTimezone } from "@/lib/prayers";
 import { getPrayerSchedule, getSettings } from "@/lib/schedule";
 import { PrayerDashboard } from "@/app/prayer-dashboard";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export default async function Home() {
   const settings = await getSettings();
@@ -14,8 +14,6 @@ export default async function Home() {
       date={date}
       times={schedule.times}
       schedulePublished={schedule.isPublished}
-      isAdmin={false}
-      adminHref="/admin/login"
     />
   );
 }

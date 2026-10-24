@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
 import { ResetPasswordForm } from "@/app/admin/reset-password/reset-password-form";
+import { NavigationPendingIcon } from "@/app/navigation-pending-icon";
 import { getAuthorizedAdmin } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +14,7 @@ export default async function ResetPasswordPage() {
     <main className="admin-shell">
       <div className="admin-topbar">
         <Link className="back-link" href="/admin">
-          <ArrowLeft size={17} /> Back to editor
+          <NavigationPendingIcon kind="back" size={17} /> Back to editor
         </Link>
       </div>
       <section className="admin-card login-card">

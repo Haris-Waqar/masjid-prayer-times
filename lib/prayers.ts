@@ -50,3 +50,12 @@ export function normalizeTime(value: string): string | null {
 export function isTime(value: string): boolean {
   return normalizeTime(value) !== null;
 }
+
+export function havePrayerTimesChanged(
+  current: PrayerTime[],
+  baseline: PrayerTime[],
+): boolean {
+  return current.some(
+    (item, index) => item.jamaat !== baseline[index]?.jamaat,
+  );
+}

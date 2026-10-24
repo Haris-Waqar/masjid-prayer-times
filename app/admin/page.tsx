@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft, LockKeyhole } from "lucide-react";
+import { LockKeyhole } from "lucide-react";
 import { AdminEditor } from "@/app/admin/admin-editor";
 import { SignOutButton } from "@/app/admin/sign-out-button";
+import { NavigationPendingIcon } from "@/app/navigation-pending-icon";
 import { dateInTimezone } from "@/lib/prayers";
 import { getPrayerTimes, getSettings } from "@/lib/schedule";
 import { createClient } from "@/lib/supabase/server";
@@ -35,7 +36,7 @@ export default async function AdminPage() {
       <main className="admin-shell">
         <div className="admin-topbar">
           <Link className="back-link" href="/">
-            <ArrowLeft size={17} /> Back to timetable
+            <NavigationPendingIcon kind="back" size={17} /> Back to timetable
           </Link>
           <SignOutButton />
         </div>
@@ -59,7 +60,7 @@ export default async function AdminPage() {
     <main className="admin-shell">
       <div className="admin-topbar">
         <Link className="back-link" href="/">
-          <ArrowLeft size={17} /> Back to timetable
+          <NavigationPendingIcon kind="back" size={17} /> Back to timetable
         </Link>
         <SignOutButton />
       </div>

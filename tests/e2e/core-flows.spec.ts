@@ -13,6 +13,35 @@ test("public timetable renders the mosque and five prayers", async ({ page }) =>
   await expect(timetable.getByRole("time")).toHaveCount(5);
   await expect(timetable.getByRole("time").first()).toHaveText(/^\d{1,2}:\d{2} [AP]M$/);
   await expect(page.getByRole("button", { name: "Refresh timetable" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Open admin area" })).toHaveAttribute(
+    "href",
+    "/admin",
+  );
+  await expect
+    .poll(() =>
+      page
+        .locator(".next-prayer-panel")
+        .evaluate((element) => getComputedStyle(element, "::after").content),
+    )
+    .toBe("none");
+});
+
+test("navigation keeps the current page visible while admin loads", async ({ page }) => {
+  await page.goto("/");
+  await page.route(/\/admin(?:\?|$)/, async (route) => {
+    if (route.request().headers().rsc === "1") {
+      await new Promise((resolve) => setTimeout(resolve, 400));
+    }
+    await route.continue();
+  });
+
+  const adminLink = page.getByRole("link", { name: "Open admin area" });
+  await adminLink.click();
+
+  await expect(page.getByRole("heading", { name: "Prayer timetable" })).toBeVisible();
+  await expect(adminLink.locator('[data-navigation-pending="true"]')).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Imam and editor sign in" })).toBeVisible();
+  await expect(page.locator(".loading-shell")).toHaveCount(0);
 });
 
 test("an existing push subscription remains enabled after reopening", async ({ page }) => {
