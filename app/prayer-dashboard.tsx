@@ -274,9 +274,14 @@ export function PrayerDashboard({
   return (
     <main className="app-shell">
       <header className="site-header">
-        <div className="brand-mark" aria-hidden="true">
-          <span />
-        </div>
+        <img
+          className="brand-mark"
+          src="/favicon.svg"
+          alt=""
+          width={46}
+          height={46}
+          aria-hidden="true"
+        />
         <div className="brand-copy">
           <p className="brand-name">{settings.name}</p>
           <p className="brand-location">

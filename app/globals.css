@@ -107,34 +107,11 @@ input:focus-visible {
 }
 
 .brand-mark {
-  align-items: end;
-  background: var(--forest);
-  border-radius: 50% 50% 14px 14px;
-  display: flex;
+  border-radius: 12px;
+  display: block;
+  flex: none;
   height: 46px;
-  justify-content: center;
-  overflow: hidden;
-  position: relative;
   width: 46px;
-}
-
-.brand-mark::before {
-  background: var(--brass);
-  border-radius: 50% 50% 5px 5px;
-  bottom: 0;
-  content: "";
-  height: 33px;
-  position: absolute;
-  width: 24px;
-}
-
-.brand-mark span {
-  background: var(--forest);
-  bottom: 0;
-  height: 25px;
-  position: absolute;
-  width: 18px;
-  z-index: 1;
 }
 
 .brand-name,
