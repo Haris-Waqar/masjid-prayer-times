@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Jamia Masjid Fazaia Town Prayer Times",
-  description: "Current prayer and jamaat times for Jamia Masjid Fazaia Town, Lahore.",
+  description: "Current jamaat times for Jamia Masjid Fazaia Town, Lahore.",
   applicationName: "Fazaia Masjid Times",
   manifest: "/manifest.webmanifest",
   appleWebApp: {

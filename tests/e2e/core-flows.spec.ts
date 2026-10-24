@@ -8,6 +8,11 @@ test("public timetable renders the mosque and five prayers", async ({ page }) =>
   for (const prayer of ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"]) {
     await expect(page.getByText(prayer, { exact: true })).toBeVisible();
   }
+  await expect(page.getByText("Begins", { exact: true })).toHaveCount(0);
+  const timetable = page.getByRole("list");
+  for (const jamaat of ["5:30 AM", "1:45 PM", "4:00 PM", "5:25 PM", "7:30 PM"]) {
+    await expect(timetable.getByText(jamaat, { exact: true })).toBeVisible();
+  }
 });
 
 test("admin without a session is redirected to sign in", async ({ page }) => {
@@ -22,11 +27,11 @@ test("schedule API rejects an unauthenticated write with JSON", async ({ request
     data: {
       date: "2026-10-24",
       times: [
-        { prayer: "Fajr", prayerStart: "05:20", jamaat: "05:45" },
-        { prayer: "Dhuhr", prayerStart: "12:30", jamaat: "13:15" },
-        { prayer: "Asr", prayerStart: "15:45", jamaat: "16:00" },
-        { prayer: "Maghrib", prayerStart: "17:35", jamaat: "17:40" },
-        { prayer: "Isha", prayerStart: "19:00", jamaat: "19:15" },
+        { prayer: "Fajr", jamaat: "05:30" },
+        { prayer: "Dhuhr", jamaat: "13:45" },
+        { prayer: "Asr", jamaat: "16:00" },
+        { prayer: "Maghrib", jamaat: "17:25" },
+        { prayer: "Isha", jamaat: "19:30" },
       ],
     },
   });

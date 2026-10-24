@@ -13,7 +13,7 @@ import {
 
 type ScheduleInput = {
   date?: string;
-  times?: Array<{ prayer?: string; prayerStart?: string; jamaat?: string }>;
+  times?: Array<{ prayer?: string; jamaat?: string }>;
 };
 
 async function publishSchedule(request: Request) {
@@ -35,8 +35,6 @@ async function publishSchedule(request: Request) {
     if (
       !item.prayer ||
       !isPrayerName(item.prayer) ||
-      !item.prayerStart ||
-      !isTime(item.prayerStart) ||
       !item.jamaat ||
       !isTime(item.jamaat)
     ) {
@@ -44,7 +42,6 @@ async function publishSchedule(request: Request) {
     }
     normalized.push({
       prayer: item.prayer,
-      prayerStart: item.prayerStart,
       jamaat: item.jamaat,
     });
   }
@@ -57,7 +54,6 @@ async function publishSchedule(request: Request) {
     p_date: input.date,
     p_times: normalized.map((item) => ({
       prayer: item.prayer,
-      prayer_start: item.prayerStart,
       jamaat: item.jamaat,
     })),
     p_changed_by: user.email,

@@ -19,10 +19,10 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
     null,
   );
 
-  function updateTime(index: number, field: "prayerStart" | "jamaat", value: string) {
+  function updateTime(index: number, value: string) {
     setTimes((current) =>
       current.map((item, itemIndex) =>
-        itemIndex === index ? { ...item, [field]: value } : item,
+        itemIndex === index ? { ...item, jamaat: value } : item,
       ),
     );
   }
@@ -82,28 +82,18 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
 
       <div className="admin-grid-head" aria-hidden="true">
         <span>Prayer</span>
-        <span>Begins</span>
         <span>Jamaat</span>
       </div>
       {PRAYERS.map((prayer, index) => (
         <div className="admin-prayer-row" key={prayer}>
           <strong>{prayer}</strong>
           <div className="time-field">
-            <label htmlFor={`${prayer}-start`}>Prayer begins</label>
-            <input
-              id={`${prayer}-start`}
-              type="time"
-              value={times[index].prayerStart}
-              onChange={(event) => updateTime(index, "prayerStart", event.target.value)}
-            />
-          </div>
-          <div className="time-field">
             <label htmlFor={`${prayer}-jamaat`}>Jamaat</label>
             <input
               id={`${prayer}-jamaat`}
               type="time"
               value={times[index].jamaat}
-              onChange={(event) => updateTime(index, "jamaat", event.target.value)}
+              onChange={(event) => updateTime(index, event.target.value)}
             />
           </div>
         </div>

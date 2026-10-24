@@ -265,7 +265,6 @@ export function PrayerDashboard({
 
           <div className="schedule-head" aria-hidden="true">
             <span>Prayer</span>
-            <span>Begins</span>
             <span>Jamaat</span>
           </div>
           <ol className="schedule-list">
@@ -279,15 +278,9 @@ export function PrayerDashboard({
                   {schedulePublished && index === nextIndex && <small>Next</small>}
                 </span>
                 {schedulePublished ? (
-                  <>
-                    <time dateTime={item.prayerStart}>{displayTime(item.prayerStart)}</time>
-                    <time dateTime={item.jamaat}>{displayTime(item.jamaat)}</time>
-                  </>
+                  <time dateTime={item.jamaat}>{displayTime(item.jamaat)}</time>
                 ) : (
-                  <>
-                    <span className="unpublished-time">—</span>
-                    <span className="unpublished-time">—</span>
-                  </>
+                  <span className="unpublished-time">—</span>
                 )}
               </li>
             ))}

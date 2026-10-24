@@ -41,16 +41,18 @@ export async function getPrayerSchedule(
     const supabase = await createClient();
     const { data: rows } = await supabase
       .from("prayer_times")
-      .select("prayer, prayer_start, jamaat")
-      .eq("date", date);
+      .select("date, prayer, jamaat")
+      .lte("date", date)
+      .order("date", { ascending: false });
 
-    const byPrayer = new Map((rows ?? []).map((row) => [row.prayer, row]));
+    const byPrayer = new Map<string, { prayer: string; jamaat: string }>();
+    for (const row of rows ?? []) {
+      if (!byPrayer.has(row.prayer)) byPrayer.set(row.prayer, row);
+    }
     const times = PRAYERS.map((prayer) => {
       const saved = byPrayer.get(prayer);
       const fallback = DEFAULT_PRAYER_TIMES.find((item) => item.prayer === prayer)!;
-      return saved
-        ? { prayer, prayerStart: saved.prayer_start, jamaat: saved.jamaat }
-        : fallback;
+      return saved ? { prayer, jamaat: saved.jamaat } : fallback;
     });
     return { times, isPublished: PRAYERS.every((prayer) => byPrayer.has(prayer)) };
   } catch {

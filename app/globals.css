@@ -342,7 +342,7 @@ input:focus-visible {
 .schedule-list li {
   align-items: center;
   display: grid;
-  grid-template-columns: 1fr 0.85fr 0.85fr;
+  grid-template-columns: 1fr 0.85fr;
 }
 
 .schedule-head {
@@ -586,7 +586,7 @@ footer a {
   align-items: end;
   display: grid;
   gap: 12px;
-  grid-template-columns: minmax(100px, 1.2fr) 1fr 1fr;
+  grid-template-columns: minmax(100px, 1.2fr) 1fr;
 }
 
 .admin-grid-head {
@@ -697,11 +697,7 @@ footer a {
   }
 
   .admin-prayer-row {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .admin-prayer-row strong {
-    grid-column: 1 / -1;
+    grid-template-columns: 0.75fr 1fr;
   }
 }
 

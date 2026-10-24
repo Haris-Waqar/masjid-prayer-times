@@ -24,11 +24,11 @@ vi.mock("@/lib/supabase/admin", () => {
 });
 
 const validTimes = [
-  { prayer: "Fajr", prayerStart: "05:20", jamaat: "05:45" },
-  { prayer: "Dhuhr", prayerStart: "12:30", jamaat: "13:15" },
-  { prayer: "Asr", prayerStart: "15:45", jamaat: "16:00" },
-  { prayer: "Maghrib", prayerStart: "17:35", jamaat: "17:40" },
-  { prayer: "Isha", prayerStart: "19:00", jamaat: "19:15" },
+  { prayer: "Fajr", jamaat: "05:30" },
+  { prayer: "Dhuhr", jamaat: "13:45" },
+  { prayer: "Asr", jamaat: "16:00" },
+  { prayer: "Maghrib", jamaat: "17:25" },
+  { prayer: "Isha", jamaat: "19:30" },
 ];
 
 function request(body: unknown) {
@@ -85,7 +85,6 @@ describe("POST /api/admin/schedule", () => {
       p_date: "2026-10-24",
       p_times: validTimes.map((time) => ({
         prayer: time.prayer,
-        prayer_start: time.prayerStart,
         jamaat: time.jamaat,
       })),
       p_changed_by: "imam@example.org",

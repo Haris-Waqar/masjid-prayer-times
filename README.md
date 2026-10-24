@@ -1,7 +1,7 @@
 # Masjid Prayer Times
 
-A mobile-first Next.js PWA for one mosque. Visitors can see prayer and jamaat
-times without an account and opt in to Web Push alerts. Only authorized editors
+A mobile-first Next.js PWA for one mosque. Visitors can see jamaat times without
+an account and opt in to Web Push alerts. Only authorized editors
 can sign in and publish timetable changes.
 
 ## Stack

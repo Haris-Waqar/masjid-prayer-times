@@ -4,7 +4,6 @@ export type PrayerName = (typeof PRAYERS)[number];
 
 export type PrayerTime = {
   prayer: PrayerName;
-  prayerStart: string;
   jamaat: string;
 };
 
@@ -23,11 +22,11 @@ export const DEFAULT_SETTINGS: MosqueSettings = {
 };
 
 export const DEFAULT_PRAYER_TIMES: PrayerTime[] = [
-  { prayer: "Fajr", prayerStart: "05:20", jamaat: "05:45" },
-  { prayer: "Dhuhr", prayerStart: "12:30", jamaat: "13:15" },
-  { prayer: "Asr", prayerStart: "15:45", jamaat: "16:00" },
-  { prayer: "Maghrib", prayerStart: "17:35", jamaat: "17:40" },
-  { prayer: "Isha", prayerStart: "19:00", jamaat: "19:30" },
+  { prayer: "Fajr", jamaat: "05:30" },
+  { prayer: "Dhuhr", jamaat: "13:45" },
+  { prayer: "Asr", jamaat: "16:00" },
+  { prayer: "Maghrib", jamaat: "17:25" },
+  { prayer: "Isha", jamaat: "19:30" },
 ];
 
 export function dateInTimezone(timezone: string, date = new Date()): string {
