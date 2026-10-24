@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { BellRing, CalendarDays, Save, X } from "lucide-react";
+import { BellRing, CalendarDays, Save } from "lucide-react";
+import { Modal } from "@/app/components/modal";
 import { readApiResponse } from "@/lib/api-response";
 import { displayScheduleDate } from "@/lib/prayer-change-notification";
 import {
@@ -17,11 +18,12 @@ type Props = {
 };
 
 export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
-  const reviewDialog = useRef<HTMLDialogElement>(null);
   const timeInputs = useRef<Array<HTMLInputElement | null>>([]);
   const dateRequest = useRef<AbortController | null>(null);
   const [date, setDate] = useState(initialDate);
   const [loadedDate, setLoadedDate] = useState(initialDate);
+  const [pendingDate, setPendingDate] = useState<string | null>(null);
+  const [reviewOpen, setReviewOpen] = useState(false);
   const [times, setTimes] = useState(initialTimes);
   const [publishedTimes, setPublishedTimes] = useState(initialTimes);
   const [loadingDate, setLoadingDate] = useState(false);
@@ -34,18 +36,30 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
 
   useEffect(() => () => dateRequest.current?.abort(), []);
 
-  async function changeDate(nextDate: string) {
+  function changeDate(nextDate: string) {
     if (!nextDate || nextDate === loadedDate) {
       setDate(loadedDate);
       return;
     }
-    if (
-      hasChanges &&
-      !window.confirm("Discard your unpublished changes and load another date?")
-    ) {
+    if (hasChanges) {
+      setPendingDate(nextDate);
       return;
     }
+    void loadDate(nextDate);
+  }
 
+  function keepEditing() {
+    setPendingDate(null);
+  }
+
+  function discardChanges() {
+    if (!pendingDate) return;
+    const nextDate = pendingDate;
+    setPendingDate(null);
+    void loadDate(nextDate);
+  }
+
+  async function loadDate(nextDate: string) {
     dateRequest.current?.abort();
     const controller = new AbortController();
     dateRequest.current = controller;
@@ -89,11 +103,11 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
 
   function review() {
     setMessage(null);
-    reviewDialog.current?.showModal();
+    setReviewOpen(true);
   }
 
   function closeReview() {
-    if (!saving) reviewDialog.current?.close();
+    if (!saving) setReviewOpen(false);
   }
 
   function openTimePicker(index: number) {
@@ -122,7 +136,7 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
         notified?: number;
       }>(response);
       if (!response.ok) throw new Error(result.error || "The timetable could not be saved.");
-      reviewDialog.current?.close();
+      setReviewOpen(false);
       setPublishedTimes(times);
       setMessage({
         kind: "success",
@@ -152,7 +166,7 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
           type="date"
           min={initialDate}
           required
-          value={date}
+          value={pendingDate ?? date}
           onChange={(event) => void changeDate(event.target.value)}
           disabled={saving}
         />
@@ -208,29 +222,48 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
         </p>
       )}
 
-      <dialog
-        className="publish-dialog"
-        ref={reviewDialog}
-        aria-labelledby="publish-dialog-title"
-        onCancel={(event) => {
-          if (saving) event.preventDefault();
-        }}
+      <Modal
+        open={pendingDate !== null}
+        kicker="Unpublished changes"
+        title="Discard these edits?"
+        closeLabel="Keep editing"
+        onClose={keepEditing}
+        actions={
+          <>
+            <button className="secondary-button" type="button" onClick={keepEditing}>
+              Keep editing
+            </button>
+            <button className="danger-button" type="button" onClick={discardChanges}>
+              Discard changes
+            </button>
+          </>
+        }
       >
-        <div className="dialog-heading">
-          <div>
-            <p className="section-kicker">Final check</p>
-            <h2 id="publish-dialog-title">Publish this timetable?</h2>
-          </div>
-          <button
-            className="dialog-close"
-            type="button"
-            onClick={closeReview}
-            disabled={saving}
-            aria-label="Close review"
-          >
-            <X size={20} />
-          </button>
-        </div>
+        <p className="dialog-copy">
+          Loading {pendingDate ? displayScheduleDate(pendingDate) : "another date"} replaces the
+          jamaat times on this page. Those edits have not been published.
+        </p>
+      </Modal>
+
+      <Modal
+        open={reviewOpen}
+        kicker="Final check"
+        title="Publish this timetable?"
+        closeLabel="Close review"
+        dismissible={!saving}
+        onClose={closeReview}
+        actions={
+          <>
+            <button className="secondary-button" type="button" onClick={closeReview} disabled={saving}>
+              Go back
+            </button>
+            <button className="primary-button" type="button" onClick={publish} disabled={saving}>
+              {saving ? <BellRing className="is-spinning" size={18} /> : <Save size={18} />}
+              {saving ? "Publishing…" : "Publish timetable"}
+            </button>
+          </>
+        }
+      >
         <p className="dialog-date">
           <CalendarDays size={17} aria-hidden="true" /> Effective {displayScheduleDate(date)}
         </p>
@@ -252,21 +285,7 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
             {message.text}
           </p>
         )}
-        <div className="dialog-actions">
-          <button
-            className="secondary-button"
-            type="button"
-            onClick={closeReview}
-            disabled={saving}
-          >
-            Go back
-          </button>
-          <button className="primary-button" type="button" onClick={publish} disabled={saving}>
-            {saving ? <BellRing className="is-spinning" size={18} /> : <Save size={18} />}
-            {saving ? "Publishing…" : "Publish timetable"}
-          </button>
-        </div>
-      </dialog>
+      </Modal>
     </section>
   );
 }

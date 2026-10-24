@@ -303,7 +303,8 @@ input:focus-visible {
 
 .notify-button,
 .secondary-button,
-.primary-button {
+.primary-button,
+.danger-button {
   align-items: center;
   border: 0;
   border-radius: 14px;
@@ -323,14 +324,16 @@ input:focus-visible {
 
 .notify-button:not(:disabled):hover,
 .secondary-button:not(:disabled):hover,
-.primary-button:not(:disabled):hover {
+.primary-button:not(:disabled):hover,
+.danger-button:not(:disabled):hover {
   box-shadow: 0 10px 24px rgb(16 62 57 / 16%);
   transform: translateY(-1px);
 }
 
 .notify-button:not(:disabled):active,
 .secondary-button:not(:disabled):active,
-.primary-button:not(:disabled):active {
+.primary-button:not(:disabled):active,
+.danger-button:not(:disabled):active {
   transform: translateY(0);
 }
 
@@ -765,7 +768,7 @@ footer a {
   padding: 28px;
 }
 
-.publish-dialog {
+.modal {
   background: var(--white);
   border: 1px solid var(--line);
   border-radius: 24px;
@@ -778,11 +781,11 @@ footer a {
   width: calc(100% - 32px);
 }
 
-.publish-dialog[open] {
+.modal[open] {
   animation: dialog-in 180ms ease-out both;
 }
 
-.publish-dialog::backdrop {
+.modal::backdrop {
   background: rgb(20 32 30 / 52%);
   backdrop-filter: blur(3px);
 }
@@ -846,6 +849,12 @@ footer a {
   text-transform: uppercase;
 }
 
+.dialog-copy {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 16px 0 0;
+}
+
 .dialog-note {
   color: var(--muted);
   font-size: 0.78rem;
@@ -861,9 +870,20 @@ footer a {
 }
 
 .dialog-actions .primary-button,
-.dialog-actions .secondary-button {
+.dialog-actions .secondary-button,
+.dialog-actions .danger-button {
   margin: 0;
   width: 100%;
+}
+
+.danger-button {
+  background: var(--danger);
+  color: var(--white);
+}
+
+.danger-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 @keyframes spin {
@@ -939,7 +959,7 @@ footer a {
     grid-template-columns: 0.75fr 1fr;
   }
 
-  .publish-dialog {
+  .modal {
     border-radius: 20px;
     padding: 20px;
   }
@@ -948,7 +968,8 @@ footer a {
     grid-template-columns: 1fr;
   }
 
-  .dialog-actions .primary-button {
+  .dialog-actions .primary-button,
+  .dialog-actions .danger-button {
     grid-row: 1;
   }
 }
