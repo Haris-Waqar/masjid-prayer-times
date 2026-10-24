@@ -12,6 +12,96 @@ test("public timetable renders the mosque and five prayers", async ({ page }) =>
   const timetable = page.getByRole("list");
   await expect(timetable.getByRole("time")).toHaveCount(5);
   await expect(timetable.getByRole("time").first()).toHaveText(/^\d{1,2}:\d{2} [AP]M$/);
+  await expect(page.getByRole("button", { name: "Refresh timetable" })).toBeVisible();
+});
+
+test("an existing push subscription remains enabled after reopening", async ({ page }) => {
+  await page.addInitScript(() => {
+    const registration = {
+      pushManager: {
+        getSubscription: async () => ({ endpoint: "https://push.example.test/subscription" }),
+      },
+    };
+    Object.defineProperty(window, "PushManager", {
+      configurable: true,
+      value: function PushManager() {},
+    });
+    Object.defineProperty(window, "Notification", {
+      configurable: true,
+      value: { permission: "granted" },
+    });
+    Object.defineProperty(navigator, "serviceWorker", {
+      configurable: true,
+      value: {
+        register: async () => registration,
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+      },
+    });
+  });
+
+  await page.goto("/");
+
+  await expect(page.getByRole("button", { name: "Alerts enabled" })).toBeVisible();
+});
+
+test("manual refresh shows progress and confirmation", async ({ page }) => {
+  await page.route("**/?refresh=*", async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    await route.continue();
+  });
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "Refresh timetable" }).click();
+
+  await expect(page.getByRole("button", { name: "Refreshing timetable" })).toBeDisabled();
+  await expect(page.getByText("Refreshing timetable…")).toBeVisible();
+  await expect(page.getByText("Timetable refreshed.")).toBeVisible();
+});
+
+test("a push update refreshes the visible timetable", async ({ page }) => {
+  await page.addInitScript(() => {
+    const runtimeWindow = window as typeof window & {
+      receiveTimetableMessage?: (event: { data: { type: string } }) => void;
+    };
+    const registration = {
+      pushManager: { getSubscription: async () => null },
+    };
+    Object.defineProperty(window, "PushManager", {
+      configurable: true,
+      value: function PushManager() {},
+    });
+    Object.defineProperty(window, "Notification", {
+      configurable: true,
+      value: { permission: "default" },
+    });
+    Object.defineProperty(navigator, "serviceWorker", {
+      configurable: true,
+      value: {
+        register: async () => registration,
+        addEventListener: (type: string, listener: typeof runtimeWindow.receiveTimetableMessage) => {
+          if (type === "message") runtimeWindow.receiveTimetableMessage = listener;
+        },
+        removeEventListener: () => undefined,
+      },
+    });
+  });
+  await page.goto("/");
+  const refreshRequest = page.waitForRequest(
+    (request) => request.headers().rsc === "1",
+  );
+
+  await page.evaluate(() => {
+    const runtimeWindow = window as typeof window & {
+      receiveTimetableMessage?: (event: { data: { type: string } }) => void;
+    };
+    runtimeWindow.receiveTimetableMessage?.({ data: { type: "TIMETABLE_UPDATED" } });
+  });
+
+  await refreshRequest;
+  await expect(
+    page.getByText("A prayer time changed. The timetable has been refreshed."),
+  ).toBeVisible();
 });
 
 test("admin without a session is redirected to sign in", async ({ page }) => {

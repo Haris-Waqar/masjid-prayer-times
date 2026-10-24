@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Bell,
   BellRing,
   CalendarDays,
   Check,
-  Clock3,
   MapPin,
+  RefreshCw,
   Settings2,
   Share2,
   WifiOff,
@@ -60,12 +61,16 @@ export function PrayerDashboard({
   isAdmin,
   adminHref,
 }: Props) {
+  const router = useRouter();
   const [now, setNow] = useState<Date | null>(null);
   const [installPrompt, setInstallPrompt] = useState<InstallPrompt | null>(null);
   const [alertState, setAlertState] = useState<
-    "idle" | "working" | "enabled" | "unsupported" | "error"
-  >("idle");
+    "checking" | "idle" | "working" | "enabled" | "unsupported" | "blocked" | "error"
+  >("checking");
   const [statusMessage, setStatusMessage] = useState("");
+  const [isRouteRefreshing, startRefresh] = useTransition();
+  const [isManualRefreshing, setIsManualRefreshing] = useState(false);
+  const isRefreshing = isRouteRefreshing || isManualRefreshing;
 
   useEffect(() => {
     const initialTimer = window.setTimeout(() => setNow(new Date()), 0);
@@ -75,15 +80,50 @@ export function PrayerDashboard({
       setInstallPrompt(event as InstallPrompt);
     };
     window.addEventListener("beforeinstallprompt", captureInstallPrompt);
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+    const receiveServiceWorkerMessage = (event: MessageEvent) => {
+      if (event.data?.type !== "TIMETABLE_UPDATED") return;
+      setStatusMessage("A prayer time changed. The timetable has been refreshed.");
+      startRefresh(() => router.refresh());
+    };
+
+    let cancelled = false;
+    async function prepareNotifications() {
+      if (
+        !("serviceWorker" in navigator) ||
+        !("PushManager" in window) ||
+        !("Notification" in window)
+      ) {
+        if (!cancelled) setAlertState("unsupported");
+        return;
+      }
+      try {
+        navigator.serviceWorker.addEventListener("message", receiveServiceWorkerMessage);
+        const registration = await navigator.serviceWorker.register("/sw.js");
+        const subscription = await registration.pushManager.getSubscription();
+        if (cancelled) return;
+        if (Notification.permission === "denied") {
+          setAlertState("blocked");
+        } else if (subscription && Notification.permission === "granted") {
+          setAlertState("enabled");
+        } else {
+          setAlertState("idle");
+        }
+      } catch {
+        if (!cancelled) setAlertState("error");
+      }
     }
+    void prepareNotifications();
+
     return () => {
+      cancelled = true;
       window.clearTimeout(initialTimer);
       window.clearInterval(timer);
       window.removeEventListener("beforeinstallprompt", captureInstallPrompt);
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.removeEventListener("message", receiveServiceWorkerMessage);
+      }
     };
-  }, []);
+  }, [router]);
 
   const currentMinutes = useMemo(() => {
     if (!now) return 0;
@@ -156,6 +196,22 @@ export function PrayerDashboard({
       setStatusMessage(
         error instanceof Error ? error.message : "Notifications could not be enabled.",
       );
+    }
+  }
+
+  async function refreshTimetable() {
+    setIsManualRefreshing(true);
+    setStatusMessage("Refreshing timetable…");
+    try {
+      const response = await fetch(`/?refresh=${Date.now()}`, { cache: "no-store" });
+      if (!response.ok) throw new Error("Refresh failed");
+      startRefresh(() => router.refresh());
+      await new Promise((resolve) => window.setTimeout(resolve, 350));
+      setStatusMessage("Timetable refreshed.");
+    } catch {
+      setStatusMessage("The timetable could not be refreshed. Please try again.");
+    } finally {
+      setIsManualRefreshing(false);
     }
   }
 
@@ -234,13 +290,18 @@ export function PrayerDashboard({
             type="button"
             onClick={enableNotifications}
             disabled={
-              !schedulePublished || alertState === "working" || alertState === "enabled"
+              !schedulePublished ||
+              alertState === "checking" ||
+              alertState === "working" ||
+              alertState === "enabled" ||
+              alertState === "unsupported" ||
+              alertState === "blocked"
             }
           >
             {alertState === "enabled" ? (
               <Check size={19} />
-            ) : alertState === "working" ? (
-              <BellRing size={19} />
+            ) : alertState === "working" || alertState === "checking" ? (
+              <BellRing className="is-spinning" size={19} />
             ) : (
               <Bell size={19} />
             )}
@@ -248,19 +309,38 @@ export function PrayerDashboard({
               ? "Alerts available after publishing"
               : alertState === "enabled"
               ? "Alerts enabled"
+              : alertState === "checking"
+                ? "Checking alerts…"
               : alertState === "working"
                 ? "Enabling…"
+                : alertState === "blocked"
+                  ? "Alerts blocked"
+                  : alertState === "unsupported"
+                    ? "Alerts unavailable"
                 : "Alert me to changes"}
           </button>
         </section>
 
-        <section className="schedule-panel" aria-labelledby="schedule-heading">
+        <section
+          className="schedule-panel"
+          aria-labelledby="schedule-heading"
+          aria-busy={isRefreshing}
+        >
           <div className="section-heading">
             <div>
               <p className="section-kicker">Today</p>
               <h2 id="schedule-heading">Prayer timetable</h2>
             </div>
-            <Clock3 size={22} aria-hidden="true" />
+            <button
+              className="refresh-button"
+              type="button"
+              onClick={refreshTimetable}
+              disabled={isRefreshing}
+              aria-label={isRefreshing ? "Refreshing timetable" : "Refresh timetable"}
+              title="Refresh timetable"
+            >
+              <RefreshCw className={isRefreshing ? "is-spinning" : undefined} size={20} />
+            </button>
           </div>
 
           <div className="schedule-head" aria-hidden="true">

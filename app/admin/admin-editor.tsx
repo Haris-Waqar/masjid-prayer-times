@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { BellRing, Save } from "lucide-react";
+import { useRef, useState } from "react";
+import { BellRing, CalendarDays, Save, X } from "lucide-react";
 import { readApiResponse } from "@/lib/api-response";
 import { PRAYERS, type PrayerTime } from "@/lib/prayers";
 
@@ -12,6 +12,7 @@ type Props = {
 };
 
 export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
+  const reviewDialog = useRef<HTMLDialogElement>(null);
   const [date, setDate] = useState(initialDate);
   const [times, setTimes] = useState(initialTimes);
   const [saving, setSaving] = useState(false);
@@ -27,14 +28,16 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
     );
   }
 
-  async function save() {
-    const changeSummary = times
-      .map((item) => `${item.prayer}: ${item.jamaat}`)
-      .join("\n");
-    if (!window.confirm(`Publish these jamaat times for ${date}?\n\n${changeSummary}`)) {
-      return;
-    }
+  function review() {
+    setMessage(null);
+    reviewDialog.current?.showModal();
+  }
 
+  function closeReview() {
+    if (!saving) reviewDialog.current?.close();
+  }
+
+  async function publish() {
     setSaving(true);
     setMessage(null);
     try {
@@ -49,6 +52,7 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
         notified?: number;
       }>(response);
       if (!response.ok) throw new Error(result.error || "The timetable could not be saved.");
+      reviewDialog.current?.close();
       setMessage({
         kind: "success",
         text:
@@ -99,12 +103,80 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
         </div>
       ))}
 
-      <button className="primary-button" type="button" onClick={save} disabled={saving}>
-        {saving ? <BellRing size={18} /> : <Save size={18} />}
-        {saving ? "Publishing…" : "Review and publish"}
+      <button className="primary-button" type="button" onClick={review} disabled={saving}>
+        <Save size={18} /> Review and publish
       </button>
       <p className="updated-note">Signed in as {editorEmail}</p>
-      {message && <p className={`form-message ${message.kind}`}>{message.text}</p>}
+      {message?.kind === "success" && (
+        <p className="form-message success" role="status">
+          {message.text}
+        </p>
+      )}
+
+      <dialog
+        className="publish-dialog"
+        ref={reviewDialog}
+        aria-labelledby="publish-dialog-title"
+        onCancel={(event) => {
+          if (saving) event.preventDefault();
+        }}
+      >
+        <div className="dialog-heading">
+          <div>
+            <p className="section-kicker">Final check</p>
+            <h2 id="publish-dialog-title">Publish this timetable?</h2>
+          </div>
+          <button
+            className="dialog-close"
+            type="button"
+            onClick={closeReview}
+            disabled={saving}
+            aria-label="Close review"
+          >
+            <X size={20} />
+          </button>
+        </div>
+        <p className="dialog-date">
+          <CalendarDays size={17} aria-hidden="true" /> Effective {date}
+        </p>
+        <ol className="review-list">
+          {times.map((item, index) => (
+            <li key={item.prayer}>
+              <span>{item.prayer}</span>
+              <strong>{formatTime(item.jamaat)}</strong>
+              {item.jamaat !== initialTimes[index]?.jamaat && <small>Changed</small>}
+            </li>
+          ))}
+        </ol>
+        <p className="dialog-note">
+          Subscribers receive an alert only when a jamaat time has changed.
+        </p>
+        {message?.kind === "error" && (
+          <p className="form-message error" role="alert">
+            {message.text}
+          </p>
+        )}
+        <div className="dialog-actions">
+          <button
+            className="secondary-button"
+            type="button"
+            onClick={closeReview}
+            disabled={saving}
+          >
+            Go back
+          </button>
+          <button className="primary-button" type="button" onClick={publish} disabled={saving}>
+            {saving ? <BellRing className="is-spinning" size={18} /> : <Save size={18} />}
+            {saving ? "Publishing…" : "Publish timetable"}
+          </button>
+        </div>
+      </dialog>
     </section>
   );
+}
+
+function formatTime(value: string) {
+  const [hours, minutes] = value.split(":").map(Number);
+  const suffix = hours >= 12 ? "PM" : "AM";
+  return `${hours % 12 || 12}:${minutes.toString().padStart(2, "0")} ${suffix}`;
 }

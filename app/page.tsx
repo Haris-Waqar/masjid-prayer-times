@@ -15,7 +15,7 @@ export default async function Home() {
       times={schedule.times}
       schedulePublished={schedule.isPublished}
       isAdmin={false}
-      adminHref="/admin"
+      adminHref="/admin/login"
     />
   );
 }

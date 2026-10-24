@@ -1,5 +1,18 @@
-const CACHE_NAME = "masjid-times-v1";
+const CACHE_NAME = "masjid-times-v2";
 const APP_SHELL = ["/", "/manifest.webmanifest", "/favicon.svg"];
+
+async function broadcastTimetableUpdate() {
+  const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+  windows.forEach((client) => client.postMessage({ type: "TIMETABLE_UPDATED" }));
+}
+
+async function refreshTimetableCache({ broadcast = false } = {}) {
+  const response = await fetch("/", { cache: "no-store" });
+  if (!response.ok) return;
+  const cache = await caches.open(CACHE_NAME);
+  await cache.put("/", response.clone());
+  if (broadcast) await broadcastTimetableUpdate();
+}
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
@@ -19,27 +32,34 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
-  if (
-    event.request.method !== "GET" ||
-    url.origin !== self.location.origin ||
-    url.pathname.startsWith("/admin") ||
-    url.pathname.startsWith("/api") ||
-    url.pathname.startsWith("/auth")
-  ) {
+  if (event.request.method !== "GET" || url.origin !== self.location.origin) {
     return;
   }
 
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        if (response.ok) {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+  if (event.request.mode === "navigate" && url.pathname === "/") {
+    event.respondWith(
+      caches.match("/").then((cached) => {
+        const update = refreshTimetableCache({ broadcast: Boolean(cached) }).catch(
+          () => undefined,
+        );
+        if (cached) {
+          event.waitUntil(update);
+          return cached;
         }
-        return response;
-      })
-      .catch(() => caches.match(event.request).then((cached) => cached || caches.match("/"))),
-  );
+        return fetch(event.request).then((response) => {
+          if (response.ok) {
+            caches.open(CACHE_NAME).then((cache) => cache.put("/", response.clone()));
+          }
+          return response;
+        });
+      }),
+    );
+    return;
+  }
+
+  if (APP_SHELL.includes(url.pathname)) {
+    event.respondWith(caches.match(event.request).then((cached) => cached || fetch(event.request)));
+  }
 });
 
 self.addEventListener("push", (event) => {
@@ -58,14 +78,17 @@ self.addEventListener("push", (event) => {
   }
 
   event.waitUntil(
-    self.registration.showNotification(payload.title, {
-      body: payload.body,
-      icon: "/favicon.svg",
-      badge: "/favicon.svg",
-      tag: payload.tag || "prayer-time-change",
-      renotify: true,
-      data: { url: payload.url || "/" },
-    }),
+    Promise.all([
+      refreshTimetableCache({ broadcast: true }).catch(() => undefined),
+      self.registration.showNotification(payload.title, {
+        body: payload.body,
+        icon: "/favicon.svg",
+        badge: "/favicon.svg",
+        tag: payload.tag || "prayer-time-change",
+        renotify: true,
+        data: { url: payload.url || "/" },
+      }),
+    ]),
   );
 });
 
@@ -76,6 +99,7 @@ self.addEventListener("notificationclick", (event) => {
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
       const existing = clients.find((client) => client.url.startsWith(self.location.origin));
       if (existing) {
+        existing.postMessage({ type: "TIMETABLE_UPDATED" });
         existing.navigate(url);
         return existing.focus();
       }
