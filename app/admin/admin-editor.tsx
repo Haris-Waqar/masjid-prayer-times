@@ -75,7 +75,7 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
       );
       const result = await readApiResponse<{ error?: string; times?: PrayerTime[] }>(response);
       if (!response.ok || !result.times) {
-        throw new Error(result.error || "The timetable could not be loaded.");
+        throw new Error(result.error || "Jamaat times could not be loaded.");
       }
       if (dateRequest.current !== controller) return;
 
@@ -86,7 +86,7 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
       if (controller.signal.aborted || dateRequest.current !== controller) return;
       setDate(loadedDate);
       setLoadError(
-        error instanceof Error ? error.message : "The timetable could not be loaded.",
+        error instanceof Error ? error.message : "Jamaat times could not be loaded.",
       );
     } finally {
       if (dateRequest.current === controller) setLoadingDate(false);
@@ -135,7 +135,7 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
         changed?: number;
         notified?: number;
       }>(response);
-      if (!response.ok) throw new Error(result.error || "The timetable could not be saved.");
+      if (!response.ok) throw new Error(result.error || "Jamaat times could not be saved.");
       setReviewOpen(false);
       setPublishedTimes(times);
       setMessage({
@@ -143,14 +143,14 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
         text:
           result.changed === 0
             ? "Saved. No jamaat times changed, so no alert was sent."
-            : `Published ${result.changed} change${result.changed === 1 ? "" : "s"}. ${
+            : `Posted ${result.changed} change${result.changed === 1 ? "" : "s"}. ${
                 result.notified ?? 0
               } subscribed device${result.notified === 1 ? " was" : "s were"} notified.`,
       });
     } catch (error) {
       setMessage({
         kind: "error",
-        text: error instanceof Error ? error.message : "The timetable could not be saved.",
+        text: error instanceof Error ? error.message : "Jamaat times could not be saved.",
       });
     } finally {
       setSaving(false);
@@ -171,7 +171,7 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
           disabled={saving}
         />
         <small>Choose today or a future date. Existing times load automatically.</small>
-        {loadingDate && <span role="status">Loading timetable…</span>}
+        {loadingDate && <span role="status">Loading times…</span>}
         {loadError && (
           <span className="date-load-error" role="alert">
             {loadError}
@@ -212,10 +212,10 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
       >
         <Save size={18} />
         {loadingDate
-          ? "Loading timetable…"
+          ? "Loading times…"
           : hasChanges
-            ? "Review and publish"
-            : "No changes to publish"}
+            ? "Review and post"
+            : "No changes to post"}
       </button>
       <p className="updated-note">Signed in as {editorEmail}</p>
       {message?.kind === "success" && (
@@ -226,7 +226,7 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
 
       <Modal
         open={pendingDate !== null}
-        kicker="Unpublished changes"
+        kicker="Unsaved changes"
         title="Discard these edits?"
         closeLabel="Keep editing"
         onClose={keepEditing}
@@ -243,14 +243,14 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
       >
         <p className="dialog-copy">
           Loading {pendingDate ? displayScheduleDate(pendingDate) : "another date"} replaces the
-          jamaat times on this page. Those edits have not been published.
+          jamaat times on this page. Those edits have not been posted.
         </p>
       </Modal>
 
       <Modal
         open={reviewOpen}
         kicker="Final check"
-        title="Publish this timetable?"
+        title="Post these jamaat times?"
         closeLabel="Close review"
         dismissible={!saving}
         onClose={closeReview}
@@ -261,13 +261,13 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
             </button>
             <button className="primary-button" type="button" onClick={publish} disabled={saving}>
               {saving ? <BellRing className="is-spinning" size={18} /> : <Save size={18} />}
-              {saving ? "Publishing…" : "Publish timetable"}
+              {saving ? "Posting…" : "Post jamaat times"}
             </button>
           </>
         }
       >
         <p className="dialog-date">
-          <CalendarDays size={17} aria-hidden="true" /> Effective {displayScheduleDate(date)}
+          <CalendarDays size={17} aria-hidden="true" /> From {displayScheduleDate(date)}
         </p>
         <ol className="review-list">
           {times.map((item, index) => (
@@ -279,8 +279,7 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
           ))}
         </ol>
         <p className="dialog-note">
-          Alerts are sent now only when a jamaat time changes, and they include this
-          effective date.
+          Alerts are sent only when a jamaat time changes, and they include this date.
         </p>
         {message?.kind === "error" && (
           <p className="form-message error" role="alert">

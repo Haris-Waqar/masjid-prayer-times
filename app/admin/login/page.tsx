@@ -7,13 +7,13 @@ export default function AdminLoginPage() {
     <main className="admin-shell">
       <div className="admin-topbar">
         <Link className="back-link" href="/">
-          <NavigationPendingIcon kind="back" size={17} /> Back to timetable
+          <NavigationPendingIcon kind="back" size={17} /> Back to jamaat times
         </Link>
       </div>
       <section className="admin-card login-card">
-        <h1 className="admin-title">Imam and editor sign in</h1>
+        <h1 className="admin-title">Sign in</h1>
         <p className="admin-lede">
-          Sign in with your authorized email address and password.
+          Use your authorized email and password to manage jamaat times.
         </p>
         <LoginForm />
       </section>

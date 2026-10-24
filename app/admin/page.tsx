@@ -36,16 +36,16 @@ export default async function AdminPage() {
       <main className="admin-shell">
         <div className="admin-topbar">
           <Link className="back-link" href="/">
-            <NavigationPendingIcon kind="back" size={17} /> Back to timetable
+            <NavigationPendingIcon kind="back" size={17} /> Back to jamaat times
           </Link>
           <SignOutButton />
         </div>
         <section className="access-denied">
           <LockKeyhole size={28} aria-hidden="true" />
-          <h1 className="admin-title">Editor access is restricted</h1>
+          <h1 className="admin-title">Access is restricted</h1>
           <p className="admin-lede">
             You signed in as <strong>{user.email}</strong>, but this address is not
-            on the mosque administrator list.
+            on the masjid administrator list.
           </p>
         </section>
       </main>
@@ -60,14 +60,14 @@ export default async function AdminPage() {
     <main className="admin-shell">
       <div className="admin-topbar">
         <Link className="back-link" href="/">
-          <NavigationPendingIcon kind="back" size={17} /> Back to timetable
+          <NavigationPendingIcon kind="back" size={17} /> Back to jamaat times
         </Link>
         <SignOutButton />
       </div>
-      <h1 className="admin-title">Update the timetable</h1>
+      <h1 className="admin-title">Update jamaat times</h1>
       <p className="admin-lede">
-        Review every time before publishing. Subscribers are notified only when a
-        jamaat time actually changes.
+        Review every time before posting. People are notified only when a jamaat
+        time actually changes.
       </p>
       <AdminEditor initialDate={date} initialTimes={times} editorEmail={user.email!} />
     </main>

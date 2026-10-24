@@ -35,7 +35,7 @@ async function validateEffectiveDate(date: string | undefined) {
 async function loadSchedule(request: Request) {
   const user = await getAuthorizedAdmin();
   if (!user?.email) {
-    return Response.json({ error: "Authorized editor access is required." }, { status: 403 });
+    return Response.json({ error: "Authorized access is required." }, { status: 403 });
   }
 
   const date = new URL(request.url).searchParams.get("date") ?? undefined;
@@ -49,7 +49,7 @@ async function loadSchedule(request: Request) {
 async function publishSchedule(request: Request) {
   const user = await getAuthorizedAdmin();
   if (!user?.email) {
-    return Response.json({ error: "Authorized editor access is required." }, { status: 403 });
+    return Response.json({ error: "Authorized access is required." }, { status: 403 });
   }
 
   const input = (await request.json()) as ScheduleInput;
@@ -89,7 +89,7 @@ async function publishSchedule(request: Request) {
     p_changed_by: user.email,
   });
   if (error || !Array.isArray(data)) {
-    return Response.json({ error: "Could not publish the timetable." }, { status: 500 });
+    return Response.json({ error: "Could not post the jamaat times." }, { status: 500 });
   }
 
   const changes = data.filter(
@@ -113,7 +113,7 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error("Failed to load prayer schedule", error);
     return Response.json(
-      { error: "The timetable could not be loaded. Please try again." },
+      { error: "Jamaat times could not be loaded. Please try again." },
       { status: 500 },
     );
   }
@@ -132,7 +132,7 @@ export async function POST(request: Request) {
 
     console.error("Failed to publish prayer schedule", error);
     return Response.json(
-      { error: "The timetable could not be published. Please try again." },
+      { error: "Jamaat times could not be posted. Please try again." },
       { status: 500 },
     );
   }

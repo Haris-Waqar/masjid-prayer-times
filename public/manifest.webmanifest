@@ -1,7 +1,7 @@
 {
-  "name": "Jamia Masjid Fazaia Town Prayer Times",
-  "short_name": "Fazaia Masjid",
-  "description": "Current jamaat times for Jamia Masjid Fazaia Town, Lahore.",
+  "name": "Jamia Masjid Fazaia Housing · Jamaat Times",
+  "short_name": "Fazaia Jamaat",
+  "description": "Current jamaat times for Jamia Masjid Fazaia Housing, Lahore.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f6f8f3",

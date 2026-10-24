@@ -14,7 +14,7 @@ export default async function ResetPasswordPage() {
     <main className="admin-shell">
       <div className="admin-topbar">
         <Link className="back-link" href="/admin">
-          <NavigationPendingIcon kind="back" size={17} /> Back to editor
+          <NavigationPendingIcon kind="back" size={17} /> Back to admin
         </Link>
       </div>
       <section className="admin-card login-card">

@@ -27,7 +27,7 @@ export function ForgotPasswordForm() {
       if (error) throw error;
       setMessage({
         kind: "success",
-        text: "If this address has an editor account, a reset link has been sent.",
+        text: "If this address is authorized, a reset link has been sent.",
       });
     } catch (error) {
       setMessage({
@@ -52,7 +52,7 @@ export function ForgotPasswordForm() {
         required
         value={email}
         onChange={(event) => setEmail(event.target.value)}
-        placeholder="imam@example.org"
+        placeholder="you@email.com"
       />
       <button className="primary-button" disabled={busy} type="submit">
         <Mail size={18} /> {busy ? "Sending…" : "Send reset link"}

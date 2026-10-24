@@ -43,7 +43,7 @@ export async function notifyPrayerChanges(date: string, changes: PrayerChange[])
       const payload = await buildPushPayload(
         {
           data: JSON.stringify({
-            title: "Prayer time changed",
+            title: "Jamaat time changed",
             body,
             url: "/",
             tag: `prayer-change-${date}`,

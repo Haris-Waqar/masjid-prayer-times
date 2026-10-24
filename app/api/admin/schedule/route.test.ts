@@ -62,7 +62,7 @@ describe("POST /api/admin/schedule", () => {
 
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({
-      error: "Authorized editor access is required.",
+      error: "Authorized access is required.",
     });
     expect(createAdminClient).not.toHaveBeenCalled();
   });

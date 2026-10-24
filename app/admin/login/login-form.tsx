@@ -48,7 +48,7 @@ export function LoginForm() {
         required
         value={email}
         onChange={(event) => setEmail(event.target.value)}
-        placeholder="imam@example.org"
+        placeholder="you@email.com"
       />
       <label htmlFor="admin-password">Password</label>
       <input
@@ -58,6 +58,7 @@ export function LoginForm() {
         required
         value={password}
         onChange={(event) => setPassword(event.target.value)}
+        placeholder="Your password"
       />
       <button className="primary-button" disabled={busy} type="submit">
         <LogIn size={18} /> {busy ? "Signing in…" : "Sign in"}

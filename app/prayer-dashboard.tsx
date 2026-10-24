@@ -93,7 +93,7 @@ export function PrayerDashboard({
     window.addEventListener("beforeinstallprompt", captureInstallPrompt);
     const receiveServiceWorkerMessage = (event: MessageEvent) => {
       if (event.data?.type !== "TIMETABLE_UPDATED") return;
-      setStatusMessage("A prayer time changed. The timetable has been refreshed.");
+      setStatusMessage("A jamaat time changed. Times have been refreshed.");
       startRefresh(() => router.refresh());
     };
 
@@ -175,7 +175,7 @@ export function PrayerDashboard({
 
   async function enableNotifications() {
     if (!schedulePublished) {
-      setStatusMessage("Alerts will be available after the imam publishes the timetable.");
+      setStatusMessage("Alerts will be available once today's jamaat times are posted.");
       return;
     }
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
@@ -252,15 +252,15 @@ export function PrayerDashboard({
 
   async function refreshTimetable() {
     setIsManualRefreshing(true);
-    setStatusMessage("Refreshing timetable…");
+    setStatusMessage("Refreshing times…");
     try {
       const response = await fetch(`/?refresh=${Date.now()}`, { cache: "no-store" });
       if (!response.ok) throw new Error("Refresh failed");
       startRefresh(() => router.refresh());
       await new Promise((resolve) => window.setTimeout(resolve, 350));
-      setStatusMessage("Timetable refreshed.");
+      setStatusMessage("Jamaat times refreshed.");
     } catch {
-      setStatusMessage("The timetable could not be refreshed. Please try again.");
+      setStatusMessage("Jamaat times could not be refreshed. Please try again.");
     } finally {
       setIsManualRefreshing(false);
     }
@@ -372,8 +372,8 @@ export function PrayerDashboard({
             ) : (
               <>
                 <p id="next-prayer-heading">Today&apos;s jamaat times</p>
-                <h1 className="awaiting-title">Awaiting confirmation</h1>
-                <p className="countdown">The imam has not published today&apos;s timetable.</p>
+                <h1 className="awaiting-title">Times not posted yet</h1>
+                <p className="countdown">Today&apos;s jamaat times have not been posted yet.</p>
               </>
             )}
           </div>
@@ -411,7 +411,7 @@ export function PrayerDashboard({
                 <Bell size={19} />
               )}
               {!schedulePublished
-                ? "Alerts available after publishing"
+                ? "Alerts available once today's times are posted"
                 : alertState === "checking"
                   ? "Checking alerts…"
                   : alertState === "working"
@@ -420,7 +420,7 @@ export function PrayerDashboard({
                       ? "Alerts blocked"
                       : alertState === "unsupported"
                         ? "Alerts unavailable"
-                        : "Alert me to changes"}
+                        : "Notify me if jamaat changes"}
             </button>
           )}
         </section>
@@ -433,15 +433,15 @@ export function PrayerDashboard({
           <div className="section-heading">
             <div>
               <p className="section-kicker">Today</p>
-              <h2 id="schedule-heading">Prayer timetable</h2>
+              <h2 id="schedule-heading">Today&apos;s jamaat times</h2>
             </div>
             <button
               className="refresh-button"
               type="button"
               onClick={refreshTimetable}
               disabled={isRefreshing}
-              aria-label={isRefreshing ? "Refreshing timetable" : "Refresh timetable"}
-              title="Refresh timetable"
+              aria-label={isRefreshing ? "Refreshing times" : "Refresh times"}
+              title="Refresh times"
             >
               <RefreshCw className={isRefreshing ? "is-spinning" : undefined} size={20} />
             </button>
@@ -480,7 +480,7 @@ export function PrayerDashboard({
               }).format(new Date(settings.updatedAt))}
             </p>
           ) : (
-            <p className="unpublished-note">No unconfirmed times are shown.</p>
+            <p className="unpublished-note">No times are shown until they are posted.</p>
           )}
         </section>
 
@@ -489,8 +489,8 @@ export function PrayerDashboard({
             <div className="utility-copy">
               <Share2 size={22} aria-hidden="true" />
               <div>
-                <h2>Keep the timetable close</h2>
-                <p>Install this app for fast access, even with a weak connection.</p>
+                <h2>Keep jamaat times handy</h2>
+                <p>Add this app for fast access, even with a weak connection.</p>
               </div>
             </div>
             <button className="secondary-button" type="button" onClick={installApp}>
@@ -498,7 +498,7 @@ export function PrayerDashboard({
             </button>
             <div className="offline-note">
               <WifiOff size={17} aria-hidden="true" />
-              The latest timetable remains available offline.
+              The latest jamaat times remain available offline.
             </div>
           </aside>
         )}
@@ -514,7 +514,7 @@ export function PrayerDashboard({
       )}
 
       <footer>
-        <p>Always check the effective date when a prayer time changes.</p>
+        <p>Always check the date when a jamaat time changes.</p>
       </footer>
     </main>
   );

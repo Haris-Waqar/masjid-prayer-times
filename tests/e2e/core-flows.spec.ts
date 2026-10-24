@@ -3,8 +3,8 @@ import { expect, test } from "@playwright/test";
 test("public timetable renders the mosque and five prayers", async ({ page }) => {
   await page.goto("/");
 
-  await expect(page.getByText("Jamia Masjid Fazaia Town", { exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Prayer timetable" })).toBeVisible();
+  await expect(page.getByText("Jamia Masjid Fazaia Housing", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today's jamaat times" })).toBeVisible();
   for (const prayer of ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"]) {
     await expect(page.getByText(prayer, { exact: true })).toBeVisible();
   }
@@ -12,7 +12,7 @@ test("public timetable renders the mosque and five prayers", async ({ page }) =>
   const timetable = page.getByRole("list");
   await expect(timetable.getByRole("time")).toHaveCount(5);
   await expect(timetable.getByRole("time").first()).toHaveText(/^\d{1,2}:\d{2} [AP]M$/);
-  await expect(page.getByRole("button", { name: "Refresh timetable" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Refresh times" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Open admin area" })).toHaveAttribute(
     "href",
     "/admin",
@@ -38,9 +38,9 @@ test("navigation keeps the current page visible while admin loads", async ({ pag
   const adminLink = page.getByRole("link", { name: "Open admin area" });
   await adminLink.click();
 
-  await expect(page.getByRole("heading", { name: "Prayer timetable" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today's jamaat times" })).toBeVisible();
   await expect(adminLink.locator('[data-navigation-pending="true"]')).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Imam and editor sign in" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
   await expect(page.locator(".loading-shell")).toHaveCount(0);
 });
 
@@ -75,7 +75,7 @@ test("an existing push subscription remains enabled after reopening", async ({ p
 
   await page.goto("/");
 
-  await expect(page.getByRole("button", { name: "Alert me to changes" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Notify me if jamaat changes" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Disable alerts" })).toBeVisible();
 });
 
@@ -86,11 +86,11 @@ test("manual refresh shows progress and confirmation", async ({ page }) => {
   });
   await page.goto("/");
 
-  await page.getByRole("button", { name: "Refresh timetable" }).click();
+  await page.getByRole("button", { name: "Refresh times" }).click();
 
-  await expect(page.getByRole("button", { name: "Refreshing timetable" })).toBeDisabled();
-  await expect(page.getByText("Refreshing timetable…")).toBeVisible();
-  await expect(page.getByText("Timetable refreshed.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Refreshing times" })).toBeDisabled();
+  await expect(page.getByText("Refreshing times…")).toBeVisible();
+  await expect(page.getByText("Jamaat times refreshed.")).toBeVisible();
 });
 
 test("a push update refreshes the visible timetable", async ({ page }) => {
@@ -134,7 +134,7 @@ test("a push update refreshes the visible timetable", async ({ page }) => {
 
   await refreshRequest;
   await expect(
-    page.getByText("A prayer time changed. The timetable has been refreshed."),
+    page.getByText("A jamaat time changed. Times have been refreshed."),
   ).toBeVisible();
 });
 
@@ -142,7 +142,7 @@ test("admin without a session is redirected to sign in", async ({ page }) => {
   await page.goto("/admin");
 
   await expect(page).toHaveURL(/\/admin\/login/);
-  await expect(page.getByRole("heading", { name: "Imam and editor sign in" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
   await expect(page.getByLabel("Password", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Forgot password?" })).toBeVisible();

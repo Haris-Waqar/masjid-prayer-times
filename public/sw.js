@@ -62,8 +62,8 @@ self.addEventListener("fetch", (event) => {
 
 self.addEventListener("push", (event) => {
   let payload = {
-    title: "Prayer time changed",
-    body: "Open the timetable to see the latest jamaat time.",
+    title: "Jamaat time changed",
+    body: "Open the app to see the latest jamaat time.",
     url: "/",
   };
 
