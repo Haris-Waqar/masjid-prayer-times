@@ -1,13 +1,17 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { Mail } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { LogIn } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 export function LoginForm() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<{ kind: "success" | "error"; text: string } | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -20,21 +24,15 @@ export function LoginForm() {
       ) {
         throw new Error("Supabase setup is not complete yet.");
       }
-      const redirectTo = `${window.location.origin}/auth/callback?next=/admin`;
-      const { error } = await createClient().auth.signInWithOtp({
+      const { error } = await createClient().auth.signInWithPassword({
         email,
-        options: { emailRedirectTo: redirectTo, shouldCreateUser: false },
+        password,
       });
-      setMessage(
-        error
-          ? { kind: "error", text: error.message }
-          : { kind: "success", text: "Check your email for the secure sign-in link." },
-      );
+      if (error) throw new Error("The email or password is incorrect.");
+      router.replace("/admin");
+      router.refresh();
     } catch (error) {
-      setMessage({
-        kind: "error",
-        text: error instanceof Error ? error.message : "Sign-in could not be started.",
-      });
+      setMessage(error instanceof Error ? error.message : "Sign-in failed.");
     } finally {
       setBusy(false);
     }
@@ -52,10 +50,22 @@ export function LoginForm() {
         onChange={(event) => setEmail(event.target.value)}
         placeholder="imam@example.org"
       />
+      <label htmlFor="admin-password">Password</label>
+      <input
+        id="admin-password"
+        type="password"
+        autoComplete="current-password"
+        required
+        value={password}
+        onChange={(event) => setPassword(event.target.value)}
+      />
       <button className="primary-button" disabled={busy} type="submit">
-        <Mail size={18} /> {busy ? "Sending…" : "Email me a sign-in link"}
+        <LogIn size={18} /> {busy ? "Signing in…" : "Sign in"}
       </button>
-      {message && <p className={`form-message ${message.kind}`}>{message.text}</p>}
+      <Link className="form-link" href="/admin/forgot-password">
+        Forgot password?
+      </Link>
+      {message && <p className="form-message error">{message}</p>}
     </form>
   );
 }

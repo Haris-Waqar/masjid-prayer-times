@@ -13,8 +13,7 @@ export default function AdminLoginPage() {
       <section className="admin-card login-card">
         <h1 className="admin-title">Imam and editor sign in</h1>
         <p className="admin-lede">
-          Enter an authorized email address. We will send a secure sign-in link—no
-          password is needed.
+          Sign in with your authorized email address and password.
         </p>
         <LoginForm />
       </section>

@@ -17,7 +17,8 @@ can sign in and publish timetable changes.
 2. In the Supabase SQL Editor, run every file in `supabase/migrations/` in
    filename order. Later migrations tighten database permissions and must not be
    skipped.
-3. Invite each editor in Supabase Authentication, then add their lowercase email:
+3. Create each editor in Supabase Authentication with an individual password,
+   then add their lowercase email:
 
    ```sql
    insert into public.admin_members (email) values ('imam@example.org');
@@ -55,8 +56,8 @@ npm run test:e2e
 Install the Playwright browser once with `npx playwright install chromium`.
 The unit/integration suite covers API authorization, missing server credentials,
 the publish payload and malformed API responses. Playwright checks the public
-timetable, admin redirect and unauthorized API behavior in desktop and mobile
-Chromium.
+timetable, password sign-in and recovery requests, admin redirect and unauthorized
+API behavior in desktop and mobile Chromium.
 
 If publishing reports that server setup is incomplete, add the Supabase
 `sb_secret_...` value to `SUPABASE_SECRET_KEY` in `.env.local`, then restart the
