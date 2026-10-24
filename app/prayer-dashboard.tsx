@@ -121,6 +121,13 @@ export function PrayerDashboard({
     };
   }, [router]);
 
+  useEffect(() => {
+    if (!statusMessage) return;
+
+    const dismissTimer = window.setTimeout(() => setStatusMessage(""), 5_000);
+    return () => window.clearTimeout(dismissTimer);
+  }, [statusMessage]);
+
   const currentMinutes = useMemo(() => {
     if (!now) return 0;
     const parts = new Intl.DateTimeFormat("en-GB", {
