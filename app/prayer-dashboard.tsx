@@ -253,7 +253,43 @@ export function PrayerDashboard({
 
       <div className="page-grid">
         <section className="next-prayer-panel" aria-labelledby="next-prayer-heading">
-          <div className="arch-line" aria-hidden="true" />
+          <div className="arch-line" aria-hidden="true">
+            <svg
+              className="musalla-niche"
+              viewBox="0 0 100 160"
+              preserveAspectRatio="none"
+            >
+              <defs>
+                <pattern
+                  id="musalla-weave"
+                  width="6"
+                  height="6"
+                  patternUnits="userSpaceOnUse"
+                  patternTransform="rotate(-18)"
+                >
+                  <line
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="6"
+                    stroke="#d1a95f"
+                    strokeOpacity="0.14"
+                    strokeWidth="1"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                </pattern>
+              </defs>
+              <path
+                d="M 4 156 V 70 C 4 47 20 30 39 18 C 46 14 50 8 50 2 C 50 8 54 14 61 18 C 80 30 96 47 96 70 V 156 Z"
+                fill="url(#musalla-weave)"
+                stroke="#d1a95f"
+                strokeOpacity="0.44"
+                strokeWidth="1"
+                strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
+              />
+            </svg>
+          </div>
           <p className="today-line">
             <CalendarDays size={17} aria-hidden="true" /> {formattedDate}
           </p>

@@ -202,15 +202,43 @@ input:focus-visible {
 }
 
 .arch-line {
-  border: 1px solid rgb(209 169 95 / 35%);
-  border-bottom: 0;
-  border-radius: 130px 130px 0 0;
-  height: 155px;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      rgb(209 169 95 / 20%) 0 1px,
+      transparent 1px 5px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      rgb(209 169 95 / 14%) 0 1px,
+      transparent 1px 5px
+    );
+  border: 1px solid rgb(209 169 95 / 48%);
+  border-radius: 130px 130px 8px 8px;
+  bottom: 96px;
   left: 50%;
   position: absolute;
   top: 56px;
   transform: translateX(-50%);
   width: 210px;
+}
+
+.arch-line::before {
+  background: var(--forest);
+  border: 1px solid rgb(209 169 95 / 30%);
+  border-radius: 120px 120px 5px 5px;
+  content: "";
+  inset: 8px;
+  position: absolute;
+}
+
+.musalla-niche {
+  height: calc(100% - 35px);
+  left: 19px;
+  overflow: visible;
+  position: absolute;
+  top: 17px;
+  width: calc(100% - 38px);
 }
 
 .today-line {
@@ -855,7 +883,7 @@ footer a {
   }
 
   .arch-line {
-    height: 245px;
+    bottom: 106px;
     top: 78px;
     width: 290px;
   }
