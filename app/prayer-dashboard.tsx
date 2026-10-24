@@ -60,6 +60,7 @@ export function PrayerDashboard({
   const router = useRouter();
   const [now, setNow] = useState<Date | null>(null);
   const [installPrompt, setInstallPrompt] = useState<InstallPrompt | null>(null);
+  const [isAppInstalled, setIsAppInstalled] = useState(false);
   const [alertState, setAlertState] = useState<
     "checking" | "idle" | "working" | "enabled" | "unsupported" | "blocked" | "error"
   >("checking");
@@ -71,6 +72,18 @@ export function PrayerDashboard({
   const showDisableAlerts = alertState === "enabled" || isDisablingAlerts;
 
   useEffect(() => {
+    const installedQuery = window.matchMedia(
+      "(display-mode: standalone), (display-mode: window-controls-overlay)",
+    );
+    const syncInstalledState = () => {
+      const iosStandalone =
+        "standalone" in navigator &&
+        Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
+      setIsAppInstalled(installedQuery.matches || iosStandalone);
+    };
+    syncInstalledState();
+    installedQuery.addEventListener("change", syncInstalledState);
+
     const initialTimer = window.setTimeout(() => setNow(new Date()), 0);
     const timer = window.setInterval(() => setNow(new Date()), 30_000);
     const captureInstallPrompt = (event: Event) => {
@@ -116,6 +129,7 @@ export function PrayerDashboard({
       cancelled = true;
       window.clearTimeout(initialTimer);
       window.clearInterval(timer);
+      installedQuery.removeEventListener("change", syncInstalledState);
       window.removeEventListener("beforeinstallprompt", captureInstallPrompt);
       if ("serviceWorker" in navigator) {
         navigator.serviceWorker.removeEventListener("message", receiveServiceWorkerMessage);
@@ -470,22 +484,24 @@ export function PrayerDashboard({
           )}
         </section>
 
-        <aside className="utility-panel" aria-label="App options">
-          <div className="utility-copy">
-            <Share2 size={22} aria-hidden="true" />
-            <div>
-              <h2>Keep the timetable close</h2>
-              <p>Install this app for fast access, even with a weak connection.</p>
+        {!isAppInstalled && (
+          <aside className="utility-panel" aria-label="App options">
+            <div className="utility-copy">
+              <Share2 size={22} aria-hidden="true" />
+              <div>
+                <h2>Keep the timetable close</h2>
+                <p>Install this app for fast access, even with a weak connection.</p>
+              </div>
             </div>
-          </div>
-          <button className="secondary-button" type="button" onClick={installApp}>
-            Install this app
-          </button>
-          <div className="offline-note">
-            <WifiOff size={17} aria-hidden="true" />
-            The latest timetable remains available offline.
-          </div>
-        </aside>
+            <button className="secondary-button" type="button" onClick={installApp}>
+              Install this app
+            </button>
+            <div className="offline-note">
+              <WifiOff size={17} aria-hidden="true" />
+              The latest timetable remains available offline.
+            </div>
+          </aside>
+        )}
       </div>
 
       {statusMessage && (

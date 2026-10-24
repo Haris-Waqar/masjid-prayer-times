@@ -530,6 +530,12 @@ input:focus-visible {
   padding: 22px;
 }
 
+@media (display-mode: standalone), (display-mode: window-controls-overlay) {
+  .utility-panel {
+    display: none;
+  }
+}
+
 .utility-copy {
   align-items: flex-start;
   display: flex;
