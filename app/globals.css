@@ -1,0 +1,695 @@
+:root {
+  --ink: #14201e;
+  --forest: #103e39;
+  --jade: #2d766d;
+  --jade-light: #dcece7;
+  --brass: #d1a95f;
+  --paper: #f6f8f3;
+  --white: #ffffff;
+  --line: #dbe2da;
+  --muted: #63706d;
+  --danger: #a33d33;
+  --shadow: 0 20px 50px rgb(16 62 57 / 10%);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100%;
+  background:
+    radial-gradient(circle at 12% 0%, rgb(209 169 95 / 13%), transparent 26rem),
+    var(--paper);
+  font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a {
+  color: inherit;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 3px solid rgb(45 118 109 / 35%);
+  outline-offset: 3px;
+}
+
+.link-button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+}
+
+.login-card {
+  max-width: 520px;
+  margin-inline: auto;
+}
+
+.login-form {
+  display: grid;
+  gap: 14px;
+  margin-top: 26px;
+}
+
+.login-form label {
+  font-weight: 700;
+}
+
+.login-form input {
+  min-height: 48px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0 14px;
+  font: inherit;
+}
+
+.app-shell {
+  min-height: 100vh;
+  padding: 0 22px 28px;
+}
+
+.site-header {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: auto 1fr auto;
+  margin: 0 auto;
+  max-width: 1120px;
+  padding: 22px 0;
+}
+
+.brand-mark {
+  align-items: end;
+  background: var(--forest);
+  border-radius: 50% 50% 14px 14px;
+  display: flex;
+  height: 46px;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+  width: 46px;
+}
+
+.brand-mark::before {
+  background: var(--brass);
+  border-radius: 50% 50% 5px 5px;
+  bottom: 0;
+  content: "";
+  height: 33px;
+  position: absolute;
+  width: 24px;
+}
+
+.brand-mark span {
+  background: var(--forest);
+  bottom: 0;
+  height: 25px;
+  position: absolute;
+  width: 18px;
+  z-index: 1;
+}
+
+.brand-name,
+.brand-location {
+  margin: 0;
+}
+
+.brand-name {
+  font-family: Charter, "Iowan Old Style", Georgia, serif;
+  font-size: 1.13rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.brand-location {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  font-size: 0.78rem;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.icon-button {
+  align-items: center;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  display: inline-flex;
+  height: 44px;
+  justify-content: center;
+  text-decoration: none;
+  transition: border-color 150ms ease, transform 150ms ease;
+  width: 44px;
+}
+
+.icon-button:hover {
+  border-color: var(--jade);
+  transform: rotate(10deg);
+}
+
+.page-grid {
+  display: grid;
+  gap: 18px;
+  margin: 0 auto;
+  max-width: 1120px;
+}
+
+.next-prayer-panel {
+  background: var(--forest);
+  border-radius: 160px 160px 30px 30px;
+  box-shadow: var(--shadow);
+  color: var(--white);
+  min-height: 430px;
+  overflow: hidden;
+  padding: 30px 28px 28px;
+  position: relative;
+}
+
+.next-prayer-panel::after {
+  border: 1px solid rgb(255 255 255 / 11%);
+  border-radius: 50%;
+  content: "";
+  height: 250px;
+  position: absolute;
+  right: -120px;
+  top: 120px;
+  width: 250px;
+}
+
+.arch-line {
+  border: 1px solid rgb(209 169 95 / 35%);
+  border-bottom: 0;
+  border-radius: 130px 130px 0 0;
+  height: 155px;
+  left: 50%;
+  position: absolute;
+  top: 56px;
+  transform: translateX(-50%);
+  width: 210px;
+}
+
+.today-line {
+  align-items: center;
+  color: #cadbd5;
+  display: flex;
+  font-size: 0.86rem;
+  gap: 8px;
+  justify-content: center;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.next-prayer-copy {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  margin-top: 54px;
+  position: relative;
+  z-index: 1;
+}
+
+.next-prayer-copy > p:first-child {
+  color: var(--brass);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.next-prayer-copy h1 {
+  font-family: Charter, "Iowan Old Style", Georgia, serif;
+  font-size: clamp(3.4rem, 16vw, 5.6rem);
+  font-weight: 500;
+  letter-spacing: -0.055em;
+  line-height: 0.92;
+  margin: 12px 0 6px;
+}
+
+.next-prayer-copy time {
+  color: #edf6f2;
+  font-size: 1.35rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.countdown {
+  background: rgb(255 255 255 / 9%);
+  border: 1px solid rgb(255 255 255 / 11%);
+  border-radius: 999px;
+  color: #cfe1db;
+  font-size: 0.78rem;
+  margin: 16px 0 0;
+  padding: 7px 12px;
+}
+
+.notify-button,
+.secondary-button,
+.primary-button {
+  align-items: center;
+  border: 0;
+  border-radius: 14px;
+  cursor: pointer;
+  display: inline-flex;
+  font-weight: 700;
+  gap: 9px;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 18px;
+}
+
+.notify-button {
+  background: var(--brass);
+  bottom: 28px;
+  color: #25312f;
+  left: 28px;
+  position: absolute;
+  right: 28px;
+  width: calc(100% - 56px);
+  z-index: 2;
+}
+
+.notify-button:disabled {
+  cursor: default;
+  opacity: 0.82;
+}
+
+.schedule-panel,
+.utility-panel,
+.admin-card {
+  background: rgb(255 255 255 / 90%);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+}
+
+.schedule-panel {
+  padding: 24px 20px 16px;
+}
+
+.section-heading {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.section-heading h2,
+.utility-copy h2,
+.admin-title {
+  font-family: Charter, "Iowan Old Style", Georgia, serif;
+  letter-spacing: -0.035em;
+}
+
+.section-heading h2 {
+  font-size: 1.8rem;
+  line-height: 1.1;
+  margin: 3px 0 0;
+}
+
+.section-kicker {
+  color: var(--jade);
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.schedule-head,
+.schedule-list li {
+  align-items: center;
+  display: grid;
+  grid-template-columns: 1fr 0.85fr 0.85fr;
+}
+
+.schedule-head {
+  color: var(--muted);
+  font-size: 0.71rem;
+  margin-top: 24px;
+  padding: 0 12px 8px;
+}
+
+.schedule-head span:not(:first-child),
+.schedule-list li > time {
+  text-align: right;
+}
+
+.schedule-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.schedule-list li {
+  border-top: 1px solid var(--line);
+  min-height: 62px;
+  padding: 0 12px;
+}
+
+.schedule-list li.is-next {
+  background: var(--jade-light);
+  border: 0;
+  border-radius: 15px;
+  color: var(--forest);
+  margin: 5px 0;
+}
+
+.schedule-list li > time {
+  font-size: 0.91rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.schedule-list li > time:last-child {
+  font-weight: 800;
+}
+
+.prayer-name {
+  align-items: center;
+  display: flex;
+  font-family: Charter, "Iowan Old Style", Georgia, serif;
+  font-size: 1.07rem;
+  font-weight: 700;
+  gap: 8px;
+}
+
+.prayer-name small {
+  background: var(--forest);
+  border-radius: 999px;
+  color: var(--white);
+  font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+  font-size: 0.61rem;
+  font-weight: 700;
+  padding: 3px 7px;
+}
+
+.updated-note {
+  color: var(--muted);
+  font-size: 0.7rem;
+  margin: 12px 12px 0;
+  text-align: right;
+}
+
+.utility-panel {
+  padding: 22px;
+}
+
+.utility-copy {
+  align-items: flex-start;
+  display: flex;
+  gap: 13px;
+}
+
+.utility-copy > svg {
+  color: var(--jade);
+  flex: 0 0 auto;
+  margin-top: 4px;
+}
+
+.utility-copy h2 {
+  font-size: 1.3rem;
+  margin: 0;
+}
+
+.utility-copy p,
+.offline-note {
+  color: var(--muted);
+}
+
+.utility-copy p {
+  font-size: 0.84rem;
+  line-height: 1.55;
+  margin: 5px 0 0;
+}
+
+.secondary-button {
+  background: var(--jade-light);
+  color: var(--forest);
+  margin-top: 18px;
+  width: 100%;
+}
+
+.offline-note {
+  align-items: center;
+  display: flex;
+  font-size: 0.72rem;
+  gap: 7px;
+  margin-top: 14px;
+}
+
+.status-toast {
+  align-items: flex-start;
+  background: var(--ink);
+  border-radius: 15px;
+  bottom: 20px;
+  box-shadow: var(--shadow);
+  color: var(--white);
+  display: flex;
+  font-size: 0.84rem;
+  gap: 14px;
+  left: 20px;
+  line-height: 1.45;
+  max-width: 420px;
+  padding: 14px 16px;
+  position: fixed;
+  right: 20px;
+  z-index: 10;
+}
+
+.status-toast button {
+  background: none;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  font-size: 1.3rem;
+  line-height: 1;
+  margin-left: auto;
+}
+
+footer {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  font-size: 0.72rem;
+  gap: 18px;
+  justify-content: space-between;
+  margin: 24px auto 0;
+  max-width: 1120px;
+}
+
+footer a {
+  color: var(--jade);
+  font-weight: 700;
+}
+
+/* Admin */
+.admin-shell {
+  margin: 0 auto;
+  max-width: 860px;
+  min-height: 100vh;
+  padding: 28px 20px 60px;
+}
+
+.admin-topbar {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.back-link {
+  align-items: center;
+  display: inline-flex;
+  font-size: 0.85rem;
+  font-weight: 700;
+  gap: 6px;
+  text-decoration: none;
+}
+
+.admin-title {
+  font-size: clamp(2.4rem, 8vw, 4rem);
+  line-height: 0.95;
+  margin: 56px 0 10px;
+}
+
+.admin-lede {
+  color: var(--muted);
+  line-height: 1.6;
+  margin: 0 0 28px;
+  max-width: 620px;
+}
+
+.admin-card {
+  padding: 24px;
+}
+
+.form-date {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 24px;
+  max-width: 260px;
+}
+
+.form-date label,
+.time-field label {
+  color: var(--muted);
+  font-size: 0.73rem;
+  font-weight: 700;
+}
+
+.form-date input,
+.time-field input {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  color: var(--ink);
+  min-height: 44px;
+  padding: 0 12px;
+}
+
+.admin-grid-head,
+.admin-prayer-row {
+  align-items: end;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(100px, 1.2fr) 1fr 1fr;
+}
+
+.admin-grid-head {
+  color: var(--muted);
+  font-size: 0.72rem;
+  padding: 0 8px 8px;
+}
+
+.admin-prayer-row {
+  border-top: 1px solid var(--line);
+  padding: 14px 8px;
+}
+
+.admin-prayer-row strong {
+  align-self: center;
+  font-family: Charter, "Iowan Old Style", Georgia, serif;
+}
+
+.time-field {
+  display: grid;
+  gap: 5px;
+}
+
+.primary-button {
+  background: var(--forest);
+  color: var(--white);
+  margin-top: 24px;
+}
+
+.primary-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.form-message {
+  border-radius: 12px;
+  font-size: 0.83rem;
+  margin-top: 18px;
+  padding: 12px 14px;
+}
+
+.form-message.success {
+  background: var(--jade-light);
+  color: var(--forest);
+}
+
+.form-message.error {
+  background: #f7e5e2;
+  color: var(--danger);
+}
+
+.access-denied {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  margin-top: 30px;
+  padding: 28px;
+}
+
+@media (min-width: 800px) {
+  .app-shell {
+    padding: 0 36px 36px;
+  }
+
+  .site-header {
+    padding: 30px 0;
+  }
+
+  .page-grid {
+    grid-template-columns: minmax(310px, 0.82fr) minmax(400px, 1.18fr);
+  }
+
+  .next-prayer-panel {
+    grid-row: span 2;
+    min-height: 612px;
+    padding-top: 44px;
+  }
+
+  .arch-line {
+    height: 245px;
+    top: 78px;
+    width: 290px;
+  }
+
+  .next-prayer-copy {
+    margin-top: 100px;
+  }
+
+  .notify-button {
+    bottom: 34px;
+    left: 34px;
+    right: 34px;
+    width: calc(100% - 68px);
+  }
+
+  .schedule-panel {
+    padding: 28px 28px 18px;
+  }
+}
+
+@media (max-width: 520px) {
+  .admin-card {
+    padding: 18px 14px;
+  }
+
+  .admin-grid-head {
+    display: none;
+  }
+
+  .admin-prayer-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .admin-prayer-row strong {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

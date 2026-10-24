@@ -1,0 +1,17 @@
+{
+  "name": "Masjid Prayer Times",
+  "short_name": "Prayer Times",
+  "description": "Current prayer and jamaat times from your local masjid.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f8f3",
+  "theme_color": "#103e39",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
