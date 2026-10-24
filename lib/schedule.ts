@@ -3,13 +3,11 @@ import { unstable_cache } from "next/cache";
 import { PRAYER_SCHEDULE_CACHE_TAG } from "@/lib/cache-tags";
 import { createPublicClient } from "@/lib/supabase/public";
 import {
-  DEFAULT_PRAYER_TIMES,
   DEFAULT_SETTINGS,
-  PRAYERS,
-  normalizeTime,
   type MosqueSettings,
   type PrayerTime,
 } from "@/lib/prayers";
+import { resolvePrayerSchedule, type PrayerScheduleRow } from "@/lib/schedule-data";
 
 export const getSettings = unstable_cache(async (): Promise<MosqueSettings> => {
   try {
@@ -47,19 +45,9 @@ export const getPrayerSchedule = unstable_cache(
         .lte("date", date)
         .order("date", { ascending: false });
 
-      const byPrayer = new Map<string, { prayer: string; jamaat: string }>();
-      for (const row of rows ?? []) {
-        if (!byPrayer.has(row.prayer)) byPrayer.set(row.prayer, row);
-      }
-      const times = PRAYERS.map((prayer) => {
-        const saved = byPrayer.get(prayer);
-        const fallback = DEFAULT_PRAYER_TIMES.find((item) => item.prayer === prayer)!;
-        const jamaat = saved ? normalizeTime(saved.jamaat) : null;
-        return jamaat ? { prayer, jamaat } : fallback;
-      });
-      return { times, isPublished: PRAYERS.every((prayer) => byPrayer.has(prayer)) };
+      return resolvePrayerSchedule((rows ?? []) as PrayerScheduleRow[], date);
     } catch {
-      return { times: DEFAULT_PRAYER_TIMES, isPublished: false };
+      return resolvePrayerSchedule([], date);
     }
   },
   ["prayer-schedule"],

@@ -3,12 +3,15 @@ import { getAuthorizedAdmin } from "@/lib/admin";
 import { PRAYER_SCHEDULE_CACHE_TAG } from "@/lib/cache-tags";
 import {
   PRAYERS,
+  dateInTimezone,
   isPrayerName,
+  isScheduleDate,
   isTime,
   normalizeTime,
   type PrayerTime,
 } from "@/lib/prayers";
 import { notifyPrayerChanges } from "@/lib/push";
+import { getPrayerSchedule, getSettings } from "@/lib/schedule";
 import {
   createAdminClient,
   SupabaseAdminConfigurationError,
@@ -19,6 +22,30 @@ type ScheduleInput = {
   times?: Array<{ prayer?: string; jamaat?: string }>;
 };
 
+async function validateEffectiveDate(date: string | undefined) {
+  if (!date || !isScheduleDate(date)) {
+    return "Choose a valid effective date.";
+  }
+
+  const settings = await getSettings();
+  const today = dateInTimezone(settings.timezone);
+  return date < today ? "Choose today or a future effective date." : null;
+}
+
+async function loadSchedule(request: Request) {
+  const user = await getAuthorizedAdmin();
+  if (!user?.email) {
+    return Response.json({ error: "Authorized editor access is required." }, { status: 403 });
+  }
+
+  const date = new URL(request.url).searchParams.get("date") ?? undefined;
+  const dateError = await validateEffectiveDate(date);
+  if (dateError) return Response.json({ error: dateError }, { status: 400 });
+
+  const schedule = await getPrayerSchedule(date!);
+  return Response.json({ date, times: schedule.times });
+}
+
 async function publishSchedule(request: Request) {
   const user = await getAuthorizedAdmin();
   if (!user?.email) {
@@ -26,9 +53,9 @@ async function publishSchedule(request: Request) {
   }
 
   const input = (await request.json()) as ScheduleInput;
-  if (!input.date || !/^\d{4}-\d{2}-\d{2}$/.test(input.date)) {
-    return Response.json({ error: "Choose a valid effective date." }, { status: 400 });
-  }
+  const dateError = await validateEffectiveDate(input.date);
+  if (dateError) return Response.json({ error: dateError }, { status: 400 });
+  const effectiveDate = input.date!;
   if (!Array.isArray(input.times) || input.times.length !== PRAYERS.length) {
     return Response.json({ error: "All five jamaat times are required." }, { status: 400 });
   }
@@ -54,7 +81,7 @@ async function publishSchedule(request: Request) {
 
   const supabase = createAdminClient();
   const { data, error } = await supabase.rpc("publish_prayer_schedule", {
-    p_date: input.date,
+    p_date: effectiveDate,
     p_times: normalized.map((item) => ({
       prayer: item.prayer,
       jamaat: item.jamaat,
@@ -74,10 +101,22 @@ async function publishSchedule(request: Request) {
       isTime(item.newJamaat),
   );
 
-  const notified = await notifyPrayerChanges(input.date, changes);
+  const notified = await notifyPrayerChanges(effectiveDate, changes);
   revalidateTag(PRAYER_SCHEDULE_CACHE_TAG, { expire: 0 });
   revalidatePath("/", "page");
   return Response.json({ ok: true, changed: changes.length, notified });
+}
+
+export async function GET(request: Request) {
+  try {
+    return await loadSchedule(request);
+  } catch (error) {
+    console.error("Failed to load prayer schedule", error);
+    return Response.json(
+      { error: "The timetable could not be loaded. Please try again." },
+      { status: 500 },
+    );
+  }
 }
 
 export async function POST(request: Request) {

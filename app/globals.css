@@ -662,6 +662,22 @@ footer a {
   font-weight: 700;
 }
 
+.form-date small,
+.form-date span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.form-date span {
+  color: var(--jade);
+  font-weight: 700;
+}
+
+.form-date .date-load-error {
+  color: var(--danger);
+}
+
 .form-date input,
 .time-field input {
   background: var(--paper);
@@ -670,6 +686,12 @@ footer a {
   color: var(--ink);
   min-height: 44px;
   padding: 0 12px;
+}
+
+.form-date input:disabled,
+.time-field input:disabled {
+  cursor: wait;
+  opacity: 0.65;
 }
 
 .admin-grid-head,

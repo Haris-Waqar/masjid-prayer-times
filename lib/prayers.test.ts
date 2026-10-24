@@ -1,10 +1,24 @@
 import { describe, expect, it } from "vitest";
 import {
   havePrayerTimesChanged,
+  isScheduleDate,
   isTime,
   normalizeTime,
   type PrayerTime,
 } from "@/lib/prayers";
+
+describe("isScheduleDate", () => {
+  it.each(["2026-10-25", "2028-02-29"])("accepts calendar date %s", (value) => {
+    expect(isScheduleDate(value)).toBe(true);
+  });
+
+  it.each(["2026-2-01", "2026-02-30", "2025-02-29", "not-a-date"])(
+    "rejects invalid calendar date %s",
+    (value) => {
+      expect(isScheduleDate(value)).toBe(false);
+    },
+  );
+});
 
 describe("normalizeTime", () => {
   it.each([

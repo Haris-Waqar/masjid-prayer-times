@@ -4,20 +4,11 @@ import {
   type PushSubscription,
   type VapidKeys,
 } from "@block65/webcrypto-web-push";
+import {
+  buildPrayerChangeNotificationBody,
+  type PrayerChange,
+} from "@/lib/prayer-change-notification";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { PrayerName } from "@/lib/prayers";
-
-type PrayerChange = {
-  prayer: PrayerName;
-  oldJamaat: string;
-  newJamaat: string;
-};
-
-function displayTime(value: string) {
-  const [hours, minutes] = value.split(":").map(Number);
-  const suffix = hours >= 12 ? "PM" : "AM";
-  return `${hours % 12 || 12}:${minutes.toString().padStart(2, "0")} ${suffix}`;
-}
 
 export async function notifyPrayerChanges(date: string, changes: PrayerChange[]) {
   const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
@@ -27,10 +18,7 @@ export async function notifyPrayerChanges(date: string, changes: PrayerChange[])
 
   const supabase = createAdminClient();
   const vapid: VapidKeys = { subject, publicKey, privateKey };
-  const body =
-    changes.length === 1
-      ? `${changes[0].prayer} jamaat: ${displayTime(changes[0].oldJamaat)} → ${displayTime(changes[0].newJamaat)}`
-      : `${changes.length} jamaat times were updated for ${date}.`;
+  const body = buildPrayerChangeNotificationBody(date, changes);
 
   let delivered = 0;
   const pageSize = 500;

@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BellRing, CalendarDays, Save, X } from "lucide-react";
 import { readApiResponse } from "@/lib/api-response";
+import { displayScheduleDate } from "@/lib/prayer-change-notification";
 import {
   PRAYERS,
   havePrayerTimesChanged,
@@ -18,14 +19,65 @@ type Props = {
 export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
   const reviewDialog = useRef<HTMLDialogElement>(null);
   const timeInputs = useRef<Array<HTMLInputElement | null>>([]);
+  const dateRequest = useRef<AbortController | null>(null);
   const [date, setDate] = useState(initialDate);
+  const [loadedDate, setLoadedDate] = useState(initialDate);
   const [times, setTimes] = useState(initialTimes);
   const [publishedTimes, setPublishedTimes] = useState(initialTimes);
+  const [loadingDate, setLoadingDate] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [message, setMessage] = useState<{ kind: "success" | "error"; text: string } | null>(
     null,
   );
   const hasChanges = havePrayerTimesChanged(times, publishedTimes);
+
+  useEffect(() => () => dateRequest.current?.abort(), []);
+
+  async function changeDate(nextDate: string) {
+    if (!nextDate || nextDate === loadedDate) {
+      setDate(loadedDate);
+      return;
+    }
+    if (
+      hasChanges &&
+      !window.confirm("Discard your unpublished changes and load another date?")
+    ) {
+      return;
+    }
+
+    dateRequest.current?.abort();
+    const controller = new AbortController();
+    dateRequest.current = controller;
+    setDate(nextDate);
+    setLoadingDate(true);
+    setLoadError(null);
+    setMessage(null);
+
+    try {
+      const response = await fetch(
+        `/api/admin/schedule?date=${encodeURIComponent(nextDate)}`,
+        { signal: controller.signal },
+      );
+      const result = await readApiResponse<{ error?: string; times?: PrayerTime[] }>(response);
+      if (!response.ok || !result.times) {
+        throw new Error(result.error || "The timetable could not be loaded.");
+      }
+      if (dateRequest.current !== controller) return;
+
+      setTimes(result.times);
+      setPublishedTimes(result.times);
+      setLoadedDate(nextDate);
+    } catch (error) {
+      if (controller.signal.aborted || dateRequest.current !== controller) return;
+      setDate(loadedDate);
+      setLoadError(
+        error instanceof Error ? error.message : "The timetable could not be loaded.",
+      );
+    } finally {
+      if (dateRequest.current === controller) setLoadingDate(false);
+    }
+  }
 
   function updateTime(index: number, value: string) {
     setTimes((current) =>
@@ -92,15 +144,25 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
   }
 
   return (
-    <section className="admin-card">
+    <section className="admin-card" aria-busy={loadingDate || saving}>
       <div className="form-date">
         <label htmlFor="effective-date">Effective date</label>
         <input
           id="effective-date"
           type="date"
+          min={initialDate}
+          required
           value={date}
-          onChange={(event) => setDate(event.target.value)}
+          onChange={(event) => void changeDate(event.target.value)}
+          disabled={saving}
         />
+        <small>Choose today or a future date. Existing times load automatically.</small>
+        {loadingDate && <span role="status">Loading timetable…</span>}
+        {loadError && (
+          <span className="date-load-error" role="alert">
+            {loadError}
+          </span>
+        )}
       </div>
 
       <div className="admin-grid-head" aria-hidden="true">
@@ -120,6 +182,7 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
               type="time"
               value={times[index].jamaat}
               onChange={(event) => updateTime(index, event.target.value)}
+              disabled={loadingDate || saving}
             />
           </div>
         </div>
@@ -129,9 +192,14 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
         className="primary-button"
         type="button"
         onClick={review}
-        disabled={saving || !hasChanges}
+        disabled={saving || loadingDate || !hasChanges}
       >
-        <Save size={18} /> {hasChanges ? "Review and publish" : "No changes to publish"}
+        <Save size={18} />
+        {loadingDate
+          ? "Loading timetable…"
+          : hasChanges
+            ? "Review and publish"
+            : "No changes to publish"}
       </button>
       <p className="updated-note">Signed in as {editorEmail}</p>
       {message?.kind === "success" && (
@@ -164,7 +232,7 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
           </button>
         </div>
         <p className="dialog-date">
-          <CalendarDays size={17} aria-hidden="true" /> Effective {date}
+          <CalendarDays size={17} aria-hidden="true" /> Effective {displayScheduleDate(date)}
         </p>
         <ol className="review-list">
           {times.map((item, index) => (
@@ -176,7 +244,8 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
           ))}
         </ol>
         <p className="dialog-note">
-          Subscribers receive an alert only when a jamaat time has changed.
+          Alerts are sent now only when a jamaat time changes, and they include this
+          effective date.
         </p>
         {message?.kind === "error" && (
           <p className="form-message error" role="alert">
