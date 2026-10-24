@@ -351,6 +351,39 @@ input:focus-visible {
   opacity: 0.82;
 }
 
+.notify-disable {
+  align-items: center;
+  background: rgb(255 255 255 / 12%);
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: 50%;
+  bottom: 28px;
+  color: #edf6f2;
+  cursor: pointer;
+  display: inline-flex;
+  height: 44px;
+  justify-content: center;
+  left: 50%;
+  position: absolute;
+  transform: translateX(-50%);
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    opacity 150ms ease;
+  width: 44px;
+  z-index: 2;
+}
+
+.notify-disable:hover:not(:disabled) {
+  background: rgb(255 255 255 / 18%);
+  border-color: rgb(209 169 95 / 55%);
+  color: var(--brass);
+}
+
+.notify-disable:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
 .schedule-panel,
 .utility-panel,
 .admin-card {

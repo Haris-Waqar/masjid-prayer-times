@@ -48,7 +48,10 @@ test("an existing push subscription remains enabled after reopening", async ({ p
   await page.addInitScript(() => {
     const registration = {
       pushManager: {
-        getSubscription: async () => ({ endpoint: "https://push.example.test/subscription" }),
+        getSubscription: async () => ({
+          endpoint: "https://fcm.googleapis.com/fcm/send/subscription",
+          unsubscribe: async () => true,
+        }),
       },
     };
     Object.defineProperty(window, "PushManager", {
@@ -63,6 +66,7 @@ test("an existing push subscription remains enabled after reopening", async ({ p
       configurable: true,
       value: {
         register: async () => registration,
+        ready: Promise.resolve(registration),
         addEventListener: () => undefined,
         removeEventListener: () => undefined,
       },
@@ -71,7 +75,8 @@ test("an existing push subscription remains enabled after reopening", async ({ p
 
   await page.goto("/");
 
-  await expect(page.getByRole("button", { name: "Alerts enabled" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Alert me to changes" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Disable alerts" })).toBeVisible();
 });
 
 test("manual refresh shows progress and confirmation", async ({ page }) => {

@@ -78,3 +78,34 @@ export async function POST(request: Request) {
   if (error) return Response.json({ error: "Could not save this device." }, { status: 500 });
   return Response.json({ ok: true });
 }
+
+export async function DELETE(request: Request) {
+  const declaredLength = Number(request.headers.get("content-length") ?? 0);
+  if (declaredLength > MAX_BODY_BYTES) {
+    return Response.json({ error: "Request is too large." }, { status: 413 });
+  }
+
+  const raw = await request.text();
+  if (new TextEncoder().encode(raw).byteLength > MAX_BODY_BYTES) {
+    return Response.json({ error: "Request is too large." }, { status: 413 });
+  }
+
+  let input: SubscriptionInput;
+  try {
+    input = JSON.parse(raw) as SubscriptionInput;
+  } catch {
+    return Response.json({ error: "Invalid JSON." }, { status: 400 });
+  }
+
+  if (!input.endpoint || !isAllowedPushEndpoint(input.endpoint) || input.endpoint.length > 2_048) {
+    return Response.json({ error: "Invalid push subscription." }, { status: 400 });
+  }
+
+  const { error } = await createAdminClient()
+    .from("push_subscriptions")
+    .delete()
+    .eq("endpoint", input.endpoint);
+
+  if (error) return Response.json({ error: "Could not remove this device." }, { status: 500 });
+  return Response.json({ ok: true });
+}

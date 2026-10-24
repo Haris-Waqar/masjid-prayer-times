@@ -5,9 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Bell,
+  BellOff,
   BellRing,
   CalendarDays,
-  Check,
   MapPin,
   RefreshCw,
   Share2,
@@ -63,10 +63,12 @@ export function PrayerDashboard({
   const [alertState, setAlertState] = useState<
     "checking" | "idle" | "working" | "enabled" | "unsupported" | "blocked" | "error"
   >("checking");
+  const [isDisablingAlerts, setIsDisablingAlerts] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const [isRouteRefreshing, startRefresh] = useTransition();
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
   const isRefreshing = isRouteRefreshing || isManualRefreshing;
+  const showDisableAlerts = alertState === "enabled" || isDisablingAlerts;
 
   useEffect(() => {
     const initialTimer = window.setTimeout(() => setNow(new Date()), 0);
@@ -202,6 +204,38 @@ export function PrayerDashboard({
     }
   }
 
+  async function disableNotifications() {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+      setAlertState("unsupported");
+      return;
+    }
+
+    setIsDisablingAlerts(true);
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+      if (subscription) {
+        const response = await fetch("/api/push/subscribe", {
+          method: "DELETE",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ endpoint: subscription.endpoint }),
+        });
+        if (!response.ok) throw new Error("Alerts could not be disabled on this device.");
+        const unsubscribed = await subscription.unsubscribe();
+        if (!unsubscribed) throw new Error("Alerts could not be disabled on this device.");
+      }
+      setAlertState("idle");
+      setStatusMessage("Alerts are disabled on this device.");
+    } catch (error) {
+      setAlertState("enabled");
+      setStatusMessage(
+        error instanceof Error ? error.message : "Alerts could not be disabled.",
+      );
+    } finally {
+      setIsDisablingAlerts(false);
+    }
+  }
+
   async function refreshTimetable() {
     setIsManualRefreshing(true);
     setStatusMessage("Refreshing timetable…");
@@ -324,40 +358,52 @@ export function PrayerDashboard({
               </>
             )}
           </div>
-          <button
-            className="notify-button"
-            type="button"
-            onClick={enableNotifications}
-            disabled={
-              !schedulePublished ||
-              alertState === "checking" ||
-              alertState === "working" ||
-              alertState === "enabled" ||
-              alertState === "unsupported" ||
-              alertState === "blocked"
-            }
-          >
-            {alertState === "enabled" ? (
-              <Check size={19} />
-            ) : alertState === "working" || alertState === "checking" ? (
-              <BellRing className="is-spinning" size={19} />
-            ) : (
-              <Bell size={19} />
-            )}
-            {!schedulePublished
-              ? "Alerts available after publishing"
-              : alertState === "enabled"
-              ? "Alerts enabled"
-              : alertState === "checking"
-                ? "Checking alerts…"
-              : alertState === "working"
-                ? "Enabling…"
-                : alertState === "blocked"
-                  ? "Alerts blocked"
-                  : alertState === "unsupported"
-                    ? "Alerts unavailable"
-                : "Alert me to changes"}
-          </button>
+          {showDisableAlerts ? (
+            <button
+              className="notify-disable"
+              type="button"
+              onClick={disableNotifications}
+              disabled={isDisablingAlerts}
+              aria-label={isDisablingAlerts ? "Disabling alerts" : "Disable alerts"}
+              title="Disable alerts"
+            >
+              {isDisablingAlerts ? (
+                <BellRing className="is-spinning" size={20} aria-hidden="true" />
+              ) : (
+                <BellOff size={20} aria-hidden="true" />
+              )}
+            </button>
+          ) : (
+            <button
+              className="notify-button"
+              type="button"
+              onClick={enableNotifications}
+              disabled={
+                !schedulePublished ||
+                alertState === "checking" ||
+                alertState === "working" ||
+                alertState === "unsupported" ||
+                alertState === "blocked"
+              }
+            >
+              {alertState === "working" || alertState === "checking" ? (
+                <BellRing className="is-spinning" size={19} />
+              ) : (
+                <Bell size={19} />
+              )}
+              {!schedulePublished
+                ? "Alerts available after publishing"
+                : alertState === "checking"
+                  ? "Checking alerts…"
+                  : alertState === "working"
+                    ? "Enabling…"
+                    : alertState === "blocked"
+                      ? "Alerts blocked"
+                      : alertState === "unsupported"
+                        ? "Alerts unavailable"
+                        : "Alert me to changes"}
+            </button>
+          )}
         </section>
 
         <section
