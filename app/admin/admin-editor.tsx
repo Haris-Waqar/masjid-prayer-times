@@ -10,6 +10,7 @@ import {
   havePrayerTimesChanged,
   type PrayerTime,
 } from "@/lib/prayers";
+import { PRAYER_URDU } from "@/lib/ui-copy";
 
 type Props = {
   initialDate: string;
@@ -185,7 +186,12 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
       </div>
       {PRAYERS.map((prayer, index) => (
         <div className="admin-prayer-row" key={prayer}>
-          <strong>{prayer}</strong>
+          <strong>
+            {prayer}
+            <span className="urdu" lang="ur">
+              {PRAYER_URDU[prayer]}
+            </span>
+          </strong>
           <div className="time-field">
             <label className="visually-hidden" htmlFor={`${prayer}-jamaat`}>
               {prayer} jamaat
@@ -280,7 +286,12 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
         <ol className="review-list">
           {times.map((item, index) => (
             <li key={item.prayer}>
-              <span>{item.prayer}</span>
+              <span>
+                {item.prayer}
+                <span className="urdu" lang="ur">
+                  {PRAYER_URDU[item.prayer]}
+                </span>
+              </span>
               <strong>{formatTime(item.jamaat)}</strong>
               {item.jamaat !== publishedTimes[index]?.jamaat && <small>Changed</small>}
             </li>

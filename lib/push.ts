@@ -5,7 +5,7 @@ import {
   type VapidKeys,
 } from "@block65/webcrypto-web-push";
 import {
-  buildPrayerChangeNotificationBody,
+  notificationForLocale,
   type PrayerChange,
 } from "@/lib/prayer-change-notification";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -18,7 +18,6 @@ export async function notifyPrayerChanges(date: string, changes: PrayerChange[])
 
   const supabase = createAdminClient();
   const vapid: VapidKeys = { subject, publicKey, privateKey };
-  const body = buildPrayerChangeNotificationBody(date, changes);
 
   let delivered = 0;
   const pageSize = 500;
@@ -26,7 +25,7 @@ export async function notifyPrayerChanges(date: string, changes: PrayerChange[])
   for (let offset = 0; ; offset += pageSize) {
     const { data: subscriptions, error } = await supabase
       .from("push_subscriptions")
-      .select("endpoint, p256dh, auth")
+      .select("endpoint, p256dh, auth, locale")
       .order("endpoint")
       .range(offset, offset + pageSize - 1);
     if (error) throw error;
@@ -40,11 +39,12 @@ export async function notifyPrayerChanges(date: string, changes: PrayerChange[])
         expirationTime: null,
         keys: { p256dh: saved.p256dh, auth: saved.auth },
       };
+      const notification = notificationForLocale(saved.locale, date, changes);
       const payload = await buildPushPayload(
         {
           data: JSON.stringify({
-            title: "Jamaat time changed",
-            body,
+            title: notification.title,
+            body: notification.body,
             url: "/",
             tag: `prayer-change-${date}`,
           }),

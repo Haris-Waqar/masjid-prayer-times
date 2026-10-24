@@ -188,9 +188,11 @@ input:focus-visible {
   border-radius: 160px 160px 30px 30px;
   box-shadow: var(--shadow);
   color: var(--white);
+  display: flex;
+  flex-direction: column;
   min-height: 430px;
   overflow: hidden;
-  padding: 30px 28px 28px;
+  padding: 30px 28px 22px;
   position: relative;
 }
 
@@ -213,6 +215,7 @@ input:focus-visible {
   position: absolute;
   top: 56px;
   transform: translateX(-50%);
+  pointer-events: none;
   width: 210px;
 }
 
@@ -249,15 +252,22 @@ input:focus-visible {
 .next-prayer-copy {
   align-items: center;
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
-  margin-top: 54px;
+  margin-top: 36px;
   position: relative;
   z-index: 1;
 }
 
-.next-prayer-copy > p:first-child {
+.next-prayer-copy > p:first-child,
+.next-kicker {
   color: var(--brass);
   font-size: 0.9rem;
+  margin: 0;
+  text-align: center;
+}
+
+.next-kicker p {
   margin: 0;
 }
 
@@ -266,8 +276,8 @@ input:focus-visible {
   font-size: clamp(3.4rem, 16vw, 5.6rem);
   font-weight: 500;
   letter-spacing: -0.055em;
-  line-height: 0.92;
-  margin: 12px 0 6px;
+  line-height: 1;
+  margin: 12px 0 0;
 }
 
 .next-prayer-copy .awaiting-title {
@@ -284,14 +294,76 @@ input:focus-visible {
   font-weight: 600;
 }
 
+.prayer-urdu {
+  color: #edf6f2;
+  font-size: 1.35rem;
+  line-height: 1.8;
+  margin: 10px 0 2px;
+  opacity: 0.92;
+}
+
 .countdown {
+  align-items: center;
   background: rgb(255 255 255 / 9%);
   border: 1px solid rgb(255 255 255 / 11%);
   border-radius: 999px;
   color: #cfe1db;
+  display: flex;
+  flex-direction: column;
   font-size: 0.78rem;
-  margin: 16px 0 0;
-  padding: 7px 12px;
+  margin: 18px 0 0;
+  max-width: calc(100% - 12px);
+  padding: 8px 16px 9px;
+  text-align: center;
+  width: max-content;
+}
+
+.countdown-urdu {
+  direction: rtl;
+  display: block;
+  font-size: 0.84rem;
+  line-height: 1.7;
+  margin-top: 1px;
+  text-align: center;
+  unicode-bidi: isolate;
+  white-space: nowrap;
+}
+
+.action-label {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  line-height: 1.15;
+  text-align: center;
+}
+
+.action-urdu {
+  color: var(--muted);
+  display: block;
+  font-family: "Noto Naskh Arabic", "Geeza Pro", "Arial", sans-serif;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.45;
+  margin-top: 2px;
+  text-align: start;
+}
+
+.next-prayer-copy .action-urdu,
+.countdown .action-urdu,
+.action-label .action-urdu {
+  color: inherit;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  margin-top: 1px;
+  opacity: 0.82;
+  text-align: center;
+}
+
+.notify-button,
+.secondary-button {
+  padding-block: 8px;
 }
 
 .notify-button,
@@ -330,13 +402,16 @@ input:focus-visible {
 
 .notify-button {
   background: var(--brass);
-  bottom: 28px;
   color: #25312f;
-  left: 28px;
-  position: absolute;
-  right: 28px;
-  width: calc(100% - 56px);
+  margin-top: 22px;
+  position: relative;
+  width: 100%;
   z-index: 2;
+}
+
+.notify-button > svg {
+  left: 18px;
+  position: absolute;
 }
 
 .notify-button:disabled {
@@ -346,18 +421,17 @@ input:focus-visible {
 
 .notify-disable {
   align-items: center;
+  align-self: center;
   background: rgb(255 255 255 / 12%);
   border: 1px solid rgb(255 255 255 / 18%);
   border-radius: 50%;
-  bottom: 28px;
   color: #edf6f2;
   cursor: pointer;
   display: inline-flex;
   height: 44px;
   justify-content: center;
-  left: 50%;
-  position: absolute;
-  transform: translateX(-50%);
+  margin-top: 22px;
+  position: relative;
   transition:
     background-color 150ms ease,
     border-color 150ms ease,
@@ -406,6 +480,17 @@ input:focus-visible {
   font-size: 1.8rem;
   line-height: 1.1;
   margin: 3px 0 0;
+}
+
+.heading-urdu {
+  color: var(--muted);
+  display: block;
+  font-family: "Noto Naskh Arabic", "Geeza Pro", "Arial", sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.7;
+  margin-top: 6px;
 }
 
 .refresh-button,
@@ -517,8 +602,9 @@ input:focus-visible {
 }
 
 .prayer-name {
-  align-items: center;
+  align-items: baseline;
   display: flex;
+  flex-wrap: wrap;
   font-family: Charter, "Iowan Old Style", Georgia, serif;
   font-size: 1.07rem;
   font-weight: 700;
@@ -532,7 +618,94 @@ input:focus-visible {
   font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
   font-size: 0.61rem;
   font-weight: 700;
+  letter-spacing: 0.04em;
   padding: 3px 7px;
+  text-transform: uppercase;
+}
+
+.bilingual {
+  align-items: baseline;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.4em;
+  min-width: 0;
+}
+
+.urdu {
+  font-family: "Noto Naskh Arabic", "Geeza Pro", "Arial", sans-serif;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.35;
+}
+
+.urdu-sub {
+  color: var(--muted);
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.45;
+  margin-top: 3px;
+  max-width: 100%;
+  text-align: start;
+  width: max-content;
+}
+
+.utility-copy .bilingual,
+.offline-note .bilingual,
+.status-toast .bilingual,
+footer .bilingual {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.utility-copy .urdu,
+.offline-note .urdu,
+footer .urdu,
+.status-toast .urdu,
+.updated-note .urdu,
+.unpublished-note .urdu,
+.urdu-sub {
+  font-size: 0.92em;
+  line-height: 1.55;
+  text-align: start;
+  width: max-content;
+}
+
+.prayer-name > .urdu {
+  font-size: 0.95rem;
+}
+
+.notify-button .bilingual,
+.secondary-button .bilingual {
+  align-items: center;
+  flex-direction: column;
+  gap: 1px;
+  line-height: 1.15;
+}
+
+.notify-button .urdu,
+.secondary-button .urdu {
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.35;
+  opacity: 0.8;
+}
+
+.countdown.bilingual,
+.next-kicker.bilingual {
+  justify-content: center;
+}
+
+.section-kicker.bilingual {
+  align-items: baseline;
+}
+
+.schedule-head .bilingual:last-child,
+.updated-note.bilingual,
+.unpublished-note.bilingual {
+  justify-content: flex-end;
+  width: 100%;
 }
 
 .updated-note {
@@ -798,9 +971,17 @@ footer a {
 }
 
 .admin-prayer-row strong {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
   font-family: Charter, "Iowan Old Style", Georgia, serif;
   font-weight: 700;
+  gap: 8px;
   min-width: 0;
+}
+
+.admin-prayer-row strong .urdu {
+  font-size: 0.95rem;
 }
 
 .time-field {
@@ -969,8 +1150,15 @@ footer a {
 }
 
 .review-list li > span {
+  align-items: baseline;
+  display: flex;
   font-family: Charter, "Iowan Old Style", Georgia, serif;
   font-weight: 700;
+  gap: 8px;
+}
+
+.review-list li > span .urdu {
+  font-size: 0.95rem;
 }
 
 .review-list strong {
@@ -1069,14 +1257,7 @@ footer a {
   }
 
   .next-prayer-copy {
-    margin-top: 100px;
-  }
-
-  .notify-button {
-    bottom: 34px;
-    left: 34px;
-    right: 34px;
-    width: calc(100% - 68px);
+    margin-top: 72px;
   }
 
   .schedule-panel {
@@ -1085,6 +1266,23 @@ footer a {
 }
 
 @media (max-width: 520px) {
+  .next-prayer-panel {
+    min-height: 0;
+    padding: 24px 18px 18px;
+  }
+
+  .next-prayer-copy {
+    margin-top: 22px;
+  }
+
+  .next-prayer-copy h1 {
+    font-size: 3.1rem;
+  }
+
+  .arch-line {
+    width: min(210px, 68vw);
+  }
+
   .admin-title {
     font-size: clamp(2rem, 9vw, 2.8rem);
     margin-top: 18px;

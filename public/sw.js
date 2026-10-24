@@ -63,7 +63,7 @@ self.addEventListener("fetch", (event) => {
 self.addEventListener("push", (event) => {
   let payload = {
     title: "Jamaat time changed",
-    body: "Open the app to see the latest jamaat time.",
+    body: "Open the app to see the latest jamaat time. · تازہ جماعت کا وقت دیکھنے کے لیے ایپ کھولیں۔",
     url: "/",
   };
 

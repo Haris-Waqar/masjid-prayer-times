@@ -6,6 +6,7 @@ const MAX_BODY_BYTES = 8_192;
 type SubscriptionInput = {
   endpoint?: string;
   keys?: { p256dh?: string; auth?: string };
+  locale?: string;
 };
 
 function isAllowedPushEndpoint(value: string) {
@@ -54,6 +55,11 @@ export async function POST(request: Request) {
     return Response.json({ error: "Invalid push subscription." }, { status: 400 });
   }
 
+  const locale = input.locale ?? "en";
+  if (locale !== "en" && locale !== "ur") {
+    return Response.json({ error: "Invalid alert language." }, { status: 400 });
+  }
+
   const clientAddress =
     request.headers.get("x-real-ip") ??
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
@@ -70,6 +76,7 @@ export async function POST(request: Request) {
     p_p256dh: input.keys.p256dh,
     p_auth: input.keys.auth,
     p_rate_key: rateKey,
+    p_locale: locale,
   });
 
   if (error?.message.includes("rate limit exceeded")) {

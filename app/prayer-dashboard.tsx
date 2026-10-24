@@ -15,6 +15,13 @@ import {
 } from "lucide-react";
 import { NavigationPendingIcon } from "@/app/navigation-pending-icon";
 import type { MosqueSettings, PrayerTime } from "@/lib/prayers";
+import {
+  PRAYER_URDU,
+  publicCopy,
+  remainingCopy,
+  updatedCopy,
+  type BilingualText,
+} from "@/lib/ui-copy";
 
 type Props = {
   settings: MosqueSettings;
@@ -65,7 +72,7 @@ export function PrayerDashboard({
     "checking" | "idle" | "working" | "enabled" | "unsupported" | "blocked" | "error"
   >("checking");
   const [isDisablingAlerts, setIsDisablingAlerts] = useState(false);
-  const [statusMessage, setStatusMessage] = useState("");
+  const [statusMessage, setStatusMessage] = useState<BilingualText | null>(null);
   const [isRouteRefreshing, startRefresh] = useTransition();
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
   const isRefreshing = isRouteRefreshing || isManualRefreshing;
@@ -93,7 +100,7 @@ export function PrayerDashboard({
     window.addEventListener("beforeinstallprompt", captureInstallPrompt);
     const receiveServiceWorkerMessage = (event: MessageEvent) => {
       if (event.data?.type !== "TIMETABLE_UPDATED") return;
-      setStatusMessage("A jamaat time changed. Times have been refreshed.");
+      setStatusMessage(publicCopy.jamaatChanged);
       startRefresh(() => router.refresh());
     };
 
@@ -140,7 +147,7 @@ export function PrayerDashboard({
   useEffect(() => {
     if (!statusMessage) return;
 
-    const dismissTimer = window.setTimeout(() => setStatusMessage(""), 5_000);
+    const dismissTimer = window.setTimeout(() => setStatusMessage(null), 5_000);
     return () => window.clearTimeout(dismissTimer);
   }, [statusMessage]);
 
@@ -175,12 +182,12 @@ export function PrayerDashboard({
 
   async function enableNotifications() {
     if (!schedulePublished) {
-      setStatusMessage("Alerts will be available once today's jamaat times are posted.");
+      setStatusMessage(publicCopy.alertsAfterPostingToast);
       return;
     }
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
       setAlertState("unsupported");
-      setStatusMessage("This browser does not support web push notifications.");
+      setStatusMessage(publicCopy.pushUnsupported);
       return;
     }
 
@@ -205,15 +212,24 @@ export function PrayerDashboard({
       const response = await fetch("/api/push/subscribe", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(subscription),
+        body: JSON.stringify({
+          endpoint: subscription.endpoint,
+          keys: {
+            p256dh: subscription.toJSON().keys?.p256dh,
+            auth: subscription.toJSON().keys?.auth,
+          },
+          locale: navigator.language.toLowerCase().startsWith("ur") ? "ur" : "en",
+        }),
       });
       if (!response.ok) throw new Error("This device could not be registered.");
       setAlertState("enabled");
-      setStatusMessage("Alerts are enabled on this device.");
+      setStatusMessage(publicCopy.alertsEnabled);
     } catch (error) {
       setAlertState("error");
       setStatusMessage(
-        error instanceof Error ? error.message : "Notifications could not be enabled.",
+        error instanceof Error
+          ? { en: error.message, ur: publicCopy.alertsEnableFailed.ur }
+          : publicCopy.alertsEnableFailed,
       );
     }
   }
@@ -239,11 +255,13 @@ export function PrayerDashboard({
         if (!unsubscribed) throw new Error("Alerts could not be disabled on this device.");
       }
       setAlertState("idle");
-      setStatusMessage("Alerts are disabled on this device.");
+      setStatusMessage(publicCopy.alertsDisabled);
     } catch (error) {
       setAlertState("enabled");
       setStatusMessage(
-        error instanceof Error ? error.message : "Alerts could not be disabled.",
+        error instanceof Error
+          ? { en: error.message, ur: publicCopy.alertsDisableFailed.ur }
+          : publicCopy.alertsDisableFailed,
       );
     } finally {
       setIsDisablingAlerts(false);
@@ -252,15 +270,15 @@ export function PrayerDashboard({
 
   async function refreshTimetable() {
     setIsManualRefreshing(true);
-    setStatusMessage("Refreshing times…");
+    setStatusMessage(publicCopy.refreshing);
     try {
       const response = await fetch(`/?refresh=${Date.now()}`, { cache: "no-store" });
       if (!response.ok) throw new Error("Refresh failed");
       startRefresh(() => router.refresh());
       await new Promise((resolve) => window.setTimeout(resolve, 350));
-      setStatusMessage("Jamaat times refreshed.");
+      setStatusMessage(publicCopy.refreshed);
     } catch {
-      setStatusMessage("Jamaat times could not be refreshed. Please try again.");
+      setStatusMessage(publicCopy.refreshFailed);
     } finally {
       setIsManualRefreshing(false);
     }
@@ -273,9 +291,7 @@ export function PrayerDashboard({
       setInstallPrompt(null);
       return;
     }
-    setStatusMessage(
-      "On iPhone, use Share → Add to Home Screen. On Android, open the browser menu and choose Install app.",
-    );
+    setStatusMessage(publicCopy.installHint);
   }
 
   const formattedDate = new Intl.DateTimeFormat("en", {
@@ -356,24 +372,55 @@ export function PrayerDashboard({
           <div className="next-prayer-copy">
             {schedulePublished ? (
               <>
-                <p id="next-prayer-heading">Next jamaat</p>
+                <p id="next-prayer-heading">
+                  {publicCopy.nextJamaat.en}
+                  <span className="action-urdu" lang="ur">
+                    {publicCopy.nextJamaat.ur}
+                  </span>
+                </p>
                 <h1>{nextPrayer.prayer}</h1>
+                <p className="urdu prayer-urdu" lang="ur" dir="rtl">
+                  {PRAYER_URDU[nextPrayer.prayer]}
+                </p>
                 <time dateTime={nextPrayer.jamaat}>
                   {displayTime(nextPrayer.jamaat)}
                 </time>
                 <p className="countdown" aria-live="polite">
-                  {now
-                    ? `${Math.floor(remaining / 60)}h ${remaining % 60}m remaining${
-                        nextIsTomorrow ? " · tomorrow" : ""
-                      }`
-                    : "Calculating…"}
+                  <span>
+                    {now
+                      ? remainingCopy(
+                          Math.floor(remaining / 60),
+                          remaining % 60,
+                          nextIsTomorrow,
+                        ).en
+                      : publicCopy.calculating.en}
+                  </span>
+                  <span className="countdown-urdu" lang="ur" dir="rtl">
+                    {now
+                      ? remainingCopy(
+                          Math.floor(remaining / 60),
+                          remaining % 60,
+                          nextIsTomorrow,
+                        ).ur
+                      : publicCopy.calculating.ur}
+                  </span>
                 </p>
               </>
             ) : (
               <>
-                <p id="next-prayer-heading">Today&apos;s jamaat times</p>
-                <h1 className="awaiting-title">Times not posted yet</h1>
-                <p className="countdown">Today&apos;s jamaat times have not been posted yet.</p>
+                <p id="next-prayer-heading">
+                  {publicCopy.todaysTimes.en}
+                  <span className="action-urdu" lang="ur">
+                    {publicCopy.todaysTimes.ur}
+                  </span>
+                </p>
+                <h1 className="awaiting-title">{publicCopy.timesNotPosted.en}</h1>
+                <p className="countdown">
+                  <span>{publicCopy.timesNotPostedDetail.en}</span>
+                  <span className="action-urdu" lang="ur">
+                    {publicCopy.timesNotPostedDetail.ur}
+                  </span>
+                </p>
               </>
             )}
           </div>
@@ -383,8 +430,10 @@ export function PrayerDashboard({
               type="button"
               onClick={disableNotifications}
               disabled={isDisablingAlerts}
-              aria-label={isDisablingAlerts ? "Disabling alerts" : "Disable alerts"}
-              title="Disable alerts"
+              aria-label={
+                isDisablingAlerts ? publicCopy.disablingAlerts.en : publicCopy.disableAlerts.en
+              }
+              title={publicCopy.disableAlerts.en}
             >
               {isDisablingAlerts ? (
                 <BellRing className="is-spinning" size={20} aria-hidden="true" />
@@ -410,17 +459,21 @@ export function PrayerDashboard({
               ) : (
                 <Bell size={19} />
               )}
-              {!schedulePublished
-                ? "Alerts available once today's times are posted"
-                : alertState === "checking"
-                  ? "Checking alerts…"
-                  : alertState === "working"
-                    ? "Enabling…"
-                    : alertState === "blocked"
-                      ? "Alerts blocked"
-                      : alertState === "unsupported"
-                        ? "Alerts unavailable"
-                        : "Notify me if jamaat changes"}
+              <ActionLabel
+                text={
+                  !schedulePublished
+                    ? publicCopy.alertsAfterPosting
+                    : alertState === "checking"
+                      ? publicCopy.checkingAlerts
+                      : alertState === "working"
+                        ? publicCopy.enablingAlerts
+                        : alertState === "blocked"
+                          ? publicCopy.alertsBlocked
+                          : alertState === "unsupported"
+                            ? publicCopy.alertsUnavailable
+                            : publicCopy.notify
+                }
+              />
             </button>
           )}
         </section>
@@ -432,24 +485,28 @@ export function PrayerDashboard({
         >
           <div className="section-heading">
             <div>
-              <p className="section-kicker">Today</p>
-              <h2 id="schedule-heading">Today&apos;s jamaat times</h2>
+              <h2 id="schedule-heading">
+                {publicCopy.todaysTimes.en}
+                <span className="heading-urdu" lang="ur">
+                  {publicCopy.todaysTimes.ur}
+                </span>
+              </h2>
             </div>
             <button
               className="refresh-button"
               type="button"
               onClick={refreshTimetable}
               disabled={isRefreshing}
-              aria-label={isRefreshing ? "Refreshing times" : "Refresh times"}
-              title="Refresh times"
+              aria-label={isRefreshing ? publicCopy.refreshingTimes.en : publicCopy.refreshTimes.en}
+              title={publicCopy.refreshTimes.en}
             >
               <RefreshCw className={isRefreshing ? "is-spinning" : undefined} size={20} />
             </button>
           </div>
 
           <div className="schedule-head" aria-hidden="true">
-            <span>Prayer</span>
-            <span>Jamaat</span>
+            <span>{publicCopy.prayer.en}</span>
+            <span>{publicCopy.jamaat.en}</span>
           </div>
           <ol className="schedule-list">
             {times.map((item, index) => (
@@ -458,8 +515,13 @@ export function PrayerDashboard({
                 className={schedulePublished && index === nextIndex ? "is-next" : undefined}
               >
                 <span className="prayer-name">
-                  {item.prayer}
-                  {schedulePublished && index === nextIndex && <small>Next</small>}
+                  <span>{item.prayer}</span>
+                  <span className="urdu" lang="ur" dir="rtl">
+                    {PRAYER_URDU[item.prayer]}
+                  </span>
+                  {schedulePublished && index === nextIndex && (
+                    <small>{publicCopy.nextBadge.en}</small>
+                  )}
                 </span>
                 {schedulePublished ? (
                   <time dateTime={item.jamaat}>{displayTime(item.jamaat)}</time>
@@ -471,34 +533,43 @@ export function PrayerDashboard({
           </ol>
           {schedulePublished ? (
             <p className="updated-note">
-              Updated {new Intl.DateTimeFormat("en", {
-                day: "numeric",
-                month: "short",
-                hour: "numeric",
-                minute: "2-digit",
-                timeZone: settings.timezone,
-              }).format(new Date(settings.updatedAt))}
+              {updatedCopy(
+                new Intl.DateTimeFormat("en", {
+                  day: "numeric",
+                  month: "short",
+                  hour: "numeric",
+                  minute: "2-digit",
+                  timeZone: settings.timezone,
+                }).format(new Date(settings.updatedAt)),
+              ).en}
             </p>
           ) : (
-            <p className="unpublished-note">No times are shown until they are posted.</p>
+            <p className="unpublished-note">{publicCopy.unposted.en}</p>
           )}
         </section>
 
         {!isAppInstalled && (
-          <aside className="utility-panel" aria-label="App options">
+          <aside className="utility-panel" aria-label={publicCopy.appOptions.en}>
             <div className="utility-copy">
               <Share2 size={22} aria-hidden="true" />
               <div>
-                <h2>Keep jamaat times handy</h2>
-                <p>Add this app for fast access, even with a weak connection.</p>
+                <h2>{publicCopy.keepHandy.en}</h2>
+                <p className="action-urdu" lang="ur">
+                  {publicCopy.keepHandy.ur}
+                </p>
               </div>
             </div>
             <button className="secondary-button" type="button" onClick={installApp}>
-              Install this app
+              <ActionLabel text={publicCopy.installApp} />
             </button>
             <div className="offline-note">
               <WifiOff size={17} aria-hidden="true" />
-              The latest jamaat times remain available offline.
+              <span>
+                {publicCopy.offline.en}
+                <span className="action-urdu" lang="ur">
+                  {publicCopy.offline.ur}
+                </span>
+              </span>
             </div>
           </aside>
         )}
@@ -506,16 +577,27 @@ export function PrayerDashboard({
 
       {statusMessage && (
         <output className="status-toast" aria-live="polite">
-          {statusMessage}
-          <button onClick={() => setStatusMessage("")} aria-label="Dismiss message">
+          {statusMessage.en}
+          <button onClick={() => setStatusMessage(null)} aria-label={publicCopy.dismiss.en}>
             ×
           </button>
         </output>
       )}
 
       <footer>
-        <p>Always check the date when a jamaat time changes.</p>
+        <p>{publicCopy.footer.en}</p>
       </footer>
     </main>
+  );
+}
+
+function ActionLabel({ text }: { text: BilingualText }) {
+  return (
+    <span className="action-label">
+      <span>{text.en}</span>
+      <span className="action-urdu" lang="ur">
+        {text.ur}
+      </span>
+    </span>
   );
 }
