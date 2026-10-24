@@ -45,10 +45,22 @@ the Home Screen before enabling notifications.
 ## Verification
 
 ```sh
+npm test
 npm run type-check
 npm run lint
 npm run build
+npm run test:e2e
 ```
+
+Install the Playwright browser once with `npx playwright install chromium`.
+The unit/integration suite covers API authorization, missing server credentials,
+the publish payload and malformed API responses. Playwright checks the public
+timetable, admin redirect and unauthorized API behavior in desktop and mobile
+Chromium.
+
+If publishing reports that server setup is incomplete, add the Supabase
+`sb_secret_...` value to `SUPABASE_SECRET_KEY` in `.env.local`, then restart the
+development server. Never paste that secret into chat or commit it to Git.
 
 Before launch, test sign-in, authorization, timetable publishing, installation
 and a real notification on both Android and iPhone.

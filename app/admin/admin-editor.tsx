@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { BellRing, Save } from "lucide-react";
+import { readApiResponse } from "@/lib/api-response";
 import { PRAYERS, type PrayerTime } from "@/lib/prayers";
 
 type Props = {
@@ -42,11 +43,11 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ date, times }),
       });
-      const result = (await response.json()) as {
+      const result = await readApiResponse<{
         error?: string;
         changed?: number;
         notified?: number;
-      };
+      }>(response);
       if (!response.ok) throw new Error(result.error || "The timetable could not be saved.");
       setMessage({
         kind: "success",

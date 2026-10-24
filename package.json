@@ -9,6 +9,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "test": "vitest run",
+    "test:e2e": "npm run build && playwright test",
     "lint": "eslint .",
     "type-check": "tsc --noEmit"
   },
@@ -22,12 +24,14 @@
     "react-dom": "19.2.6"
   },
   "devDependencies": {
+    "@playwright/test": "1.64.1",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "eslint": "^9.0.0",
     "eslint-config-next": "16.3.4",
-    "typescript": "^5.9.0"
+    "typescript": "^5.9.0",
+    "vitest": "5.0.5"
   },
   "type": "module"
 }

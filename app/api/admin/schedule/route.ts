@@ -6,14 +6,17 @@ import {
   type PrayerTime,
 } from "@/lib/prayers";
 import { notifyPrayerChanges } from "@/lib/push";
-import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  createAdminClient,
+  SupabaseAdminConfigurationError,
+} from "@/lib/supabase/admin";
 
 type ScheduleInput = {
   date?: string;
   times?: Array<{ prayer?: string; prayerStart?: string; jamaat?: string }>;
 };
 
-export async function POST(request: Request) {
+async function publishSchedule(request: Request) {
   const user = await getAuthorizedAdmin();
   if (!user?.email) {
     return Response.json({ error: "Authorized editor access is required." }, { status: 403 });
@@ -74,4 +77,23 @@ export async function POST(request: Request) {
 
   const notified = await notifyPrayerChanges(input.date, changes);
   return Response.json({ ok: true, changed: changes.length, notified });
+}
+
+export async function POST(request: Request) {
+  try {
+    return await publishSchedule(request);
+  } catch (error) {
+    if (error instanceof SupabaseAdminConfigurationError) {
+      return Response.json(
+        { error: "Server setup is incomplete. Add the Supabase secret key and restart the app." },
+        { status: 503 },
+      );
+    }
+
+    console.error("Failed to publish prayer schedule", error);
+    return Response.json(
+      { error: "The timetable could not be published. Please try again." },
+      { status: 500 },
+    );
+  }
 }
