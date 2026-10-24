@@ -19,6 +19,7 @@ type Props = {
   settings: MosqueSettings;
   date: string;
   times: PrayerTime[];
+  schedulePublished: boolean;
   isAdmin: boolean;
   adminHref: string;
 };
@@ -55,6 +56,7 @@ export function PrayerDashboard({
   settings,
   date,
   times,
+  schedulePublished,
   isAdmin,
   adminHref,
 }: Props) {
@@ -113,6 +115,10 @@ export function PrayerDashboard({
   );
 
   async function enableNotifications() {
+    if (!schedulePublished) {
+      setStatusMessage("Alerts will be available after the imam publishes the timetable.");
+      return;
+    }
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
       setAlertState("unsupported");
       setStatusMessage("This browser does not support web push notifications.");
@@ -200,24 +206,36 @@ export function PrayerDashboard({
             <CalendarDays size={17} aria-hidden="true" /> {formattedDate}
           </p>
           <div className="next-prayer-copy">
-            <p id="next-prayer-heading">Next jamaat</p>
-            <h1>{nextPrayer.prayer}</h1>
-            <time dateTime={nextPrayer.jamaat}>
-              {displayTime(nextPrayer.jamaat)}
-            </time>
-            <p className="countdown" aria-live="polite">
-              {now
-                ? `${Math.floor(remaining / 60)}h ${remaining % 60}m remaining${
-                    nextIsTomorrow ? " · tomorrow" : ""
-                  }`
-                : "Calculating…"}
-            </p>
+            {schedulePublished ? (
+              <>
+                <p id="next-prayer-heading">Next jamaat</p>
+                <h1>{nextPrayer.prayer}</h1>
+                <time dateTime={nextPrayer.jamaat}>
+                  {displayTime(nextPrayer.jamaat)}
+                </time>
+                <p className="countdown" aria-live="polite">
+                  {now
+                    ? `${Math.floor(remaining / 60)}h ${remaining % 60}m remaining${
+                        nextIsTomorrow ? " · tomorrow" : ""
+                      }`
+                    : "Calculating…"}
+                </p>
+              </>
+            ) : (
+              <>
+                <p id="next-prayer-heading">Today&apos;s jamaat times</p>
+                <h1 className="awaiting-title">Awaiting confirmation</h1>
+                <p className="countdown">The imam has not published today&apos;s timetable.</p>
+              </>
+            )}
           </div>
           <button
             className="notify-button"
             type="button"
             onClick={enableNotifications}
-            disabled={alertState === "working" || alertState === "enabled"}
+            disabled={
+              !schedulePublished || alertState === "working" || alertState === "enabled"
+            }
           >
             {alertState === "enabled" ? (
               <Check size={19} />
@@ -226,7 +244,9 @@ export function PrayerDashboard({
             ) : (
               <Bell size={19} />
             )}
-            {alertState === "enabled"
+            {!schedulePublished
+              ? "Alerts available after publishing"
+              : alertState === "enabled"
               ? "Alerts enabled"
               : alertState === "working"
                 ? "Enabling…"
@@ -252,26 +272,39 @@ export function PrayerDashboard({
             {times.map((item, index) => (
               <li
                 key={item.prayer}
-                className={index === nextIndex ? "is-next" : undefined}
+                className={schedulePublished && index === nextIndex ? "is-next" : undefined}
               >
                 <span className="prayer-name">
                   {item.prayer}
-                  {index === nextIndex && <small>Next</small>}
+                  {schedulePublished && index === nextIndex && <small>Next</small>}
                 </span>
-                <time dateTime={item.prayerStart}>{displayTime(item.prayerStart)}</time>
-                <time dateTime={item.jamaat}>{displayTime(item.jamaat)}</time>
+                {schedulePublished ? (
+                  <>
+                    <time dateTime={item.prayerStart}>{displayTime(item.prayerStart)}</time>
+                    <time dateTime={item.jamaat}>{displayTime(item.jamaat)}</time>
+                  </>
+                ) : (
+                  <>
+                    <span className="unpublished-time">—</span>
+                    <span className="unpublished-time">—</span>
+                  </>
+                )}
               </li>
             ))}
           </ol>
-          <p className="updated-note">
-            Updated {new Intl.DateTimeFormat("en", {
-              day: "numeric",
-              month: "short",
-              hour: "numeric",
-              minute: "2-digit",
-              timeZone: settings.timezone,
-            }).format(new Date(settings.updatedAt))}
-          </p>
+          {schedulePublished ? (
+            <p className="updated-note">
+              Updated {new Intl.DateTimeFormat("en", {
+                day: "numeric",
+                month: "short",
+                hour: "numeric",
+                minute: "2-digit",
+                timeZone: settings.timezone,
+              }).format(new Date(settings.updatedAt))}
+            </p>
+          ) : (
+            <p className="unpublished-note">No unconfirmed times are shown.</p>
+          )}
         </section>
 
         <aside className="utility-panel" aria-label="App options">

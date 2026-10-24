@@ -1,5 +1,5 @@
 import { dateInTimezone } from "@/lib/prayers";
-import { getPrayerTimes, getSettings } from "@/lib/schedule";
+import { getPrayerSchedule, getSettings } from "@/lib/schedule";
 import { PrayerDashboard } from "@/app/prayer-dashboard";
 
 export const dynamic = "force-dynamic";
@@ -7,12 +7,13 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   const settings = await getSettings();
   const date = dateInTimezone(settings.timezone);
-  const times = await getPrayerTimes(date);
+  const schedule = await getPrayerSchedule(date);
   return (
     <PrayerDashboard
       settings={settings}
       date={date}
-      times={times}
+      times={schedule.times}
+      schedulePublished={schedule.isPublished}
       isAdmin={false}
       adminHref="/admin"
     />

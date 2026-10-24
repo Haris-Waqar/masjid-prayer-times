@@ -2,14 +2,14 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Masjid Prayer Times",
-  description: "Current prayer and jamaat times from your local masjid.",
-  applicationName: "Masjid Prayer Times",
+  title: "Jamia Masjid Fazaia Town Prayer Times",
+  description: "Current prayer and jamaat times for Jamia Masjid Fazaia Town, Lahore.",
+  applicationName: "Fazaia Masjid Times",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Prayer Times",
+    title: "Fazaia Masjid Times",
   },
   icons: {
     icon: "/favicon.svg",

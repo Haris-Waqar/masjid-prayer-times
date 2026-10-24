@@ -1,9 +1,11 @@
 create extension if not exists pgcrypto;
 
+create schema if not exists private;
+
 create table public.mosque_settings (
   id smallint primary key default 1 check (id = 1),
-  name text not null default 'Your local masjid',
-  location text not null default 'Community prayer timetable',
+  name text not null default 'Jamia Masjid Fazaia Town',
+  location text not null default 'Block H, Fazaia Housing Society, Lahore',
   timezone text not null default 'Asia/Karachi',
   updated_at timestamptz not null default now()
 );
@@ -57,12 +59,12 @@ alter table public.push_subscriptions enable row level security;
 alter table public.push_rate_limits enable row level security;
 alter table public.change_history enable row level security;
 
-create or replace function public.is_admin()
+create or replace function private.is_admin()
 returns boolean
 language sql
 stable
 security definer
-set search_path = public
+set search_path = ''
 as $$
   select exists (
     select 1 from public.admin_members
@@ -70,8 +72,9 @@ as $$
   );
 $$;
 
-revoke all on function public.is_admin() from public;
-grant execute on function public.is_admin() to authenticated;
+revoke all on function private.is_admin() from public;
+grant usage on schema private to authenticated;
+grant execute on function private.is_admin() to authenticated;
 
 create policy "Public can read mosque settings"
 on public.mosque_settings for select to anon, authenticated using (true);
@@ -84,7 +87,8 @@ on public.admin_members for select to authenticated
 using (email = lower(coalesce(auth.jwt() ->> 'email', '')));
 
 create policy "Admins can read change history"
-on public.change_history for select to authenticated using (public.is_admin());
+on public.change_history for select to authenticated
+using ((select private.is_admin()));
 
 create or replace function public.register_push_subscription(
   p_endpoint text,
@@ -94,8 +98,8 @@ create or replace function public.register_push_subscription(
 )
 returns void
 language plpgsql
-security definer
-set search_path = public
+security invoker
+set search_path = ''
 as $$
 declare
   v_attempts integer;
@@ -137,8 +141,8 @@ create or replace function public.publish_prayer_schedule(
 )
 returns jsonb
 language plpgsql
-security definer
-set search_path = public
+security invoker
+set search_path = ''
 as $$
 declare
   v_item jsonb;

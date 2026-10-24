@@ -16,8 +16,8 @@ export type MosqueSettings = {
 };
 
 export const DEFAULT_SETTINGS: MosqueSettings = {
-  name: "Your local masjid",
-  location: "Community prayer timetable",
+  name: "Jamia Masjid Fazaia Town",
+  location: "Block H, Fazaia Housing Society, Lahore",
   timezone: "Asia/Karachi",
   updatedAt: new Date().toISOString(),
 };

@@ -14,7 +14,9 @@ can sign in and publish timetable changes.
 ## Local setup
 
 1. Create a Supabase project.
-2. In the Supabase SQL Editor, run `supabase/migrations/0001_initial.sql`.
+2. In the Supabase SQL Editor, run every file in `supabase/migrations/` in
+   filename order. Later migrations tighten database permissions and must not be
+   skipped.
 3. Invite each editor in Supabase Authentication, then add their lowercase email:
 
    ```sql
@@ -22,11 +24,11 @@ can sign in and publish timetable changes.
    ```
 
 4. Copy `.env.example` to `.env.local` and add the Supabase URL, publishable key,
-   service-role key and VAPID keys.
+   server secret key and VAPID keys.
 5. Add `http://localhost:3000/auth/callback` to Supabase Auth redirect URLs.
 6. Run `npm install` and `npm run dev`.
 
-Never expose `SUPABASE_SERVICE_ROLE_KEY` or `VAPID_PRIVATE_KEY` in browser code or
+Never expose `SUPABASE_SECRET_KEY` or `VAPID_PRIVATE_KEY` in browser code or
 commit them to Git.
 
 ## Alerts
