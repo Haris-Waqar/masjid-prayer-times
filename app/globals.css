@@ -317,7 +317,6 @@ input:focus-visible {
   padding: 0 18px;
   transition:
     background-color 150ms ease,
-    box-shadow 150ms ease,
     opacity 150ms ease,
     transform 150ms ease;
 }
@@ -326,7 +325,6 @@ input:focus-visible {
 .secondary-button:not(:disabled):hover,
 .primary-button:not(:disabled):hover,
 .danger-button:not(:disabled):hover {
-  box-shadow: 0 10px 24px rgb(16 62 57 / 16%);
   transform: translateY(-1px);
 }
 
@@ -476,7 +474,7 @@ input:focus-visible {
 }
 
 .schedule-list li > time:last-child {
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .unpublished-time {
@@ -658,11 +656,22 @@ footer a {
   max-width: 260px;
 }
 
-.form-date label,
-.time-field label {
+.form-date label {
   color: var(--muted);
   font-size: 0.73rem;
   font-weight: 700;
+}
+
+.visually-hidden {
+  border: 0;
+  clip-path: inset(50%);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
 }
 
 .form-date small,
@@ -699,37 +708,50 @@ footer a {
 
 .admin-grid-head,
 .admin-prayer-row {
-  align-items: end;
+  align-items: center;
   display: grid;
-  gap: 12px;
-  grid-template-columns: minmax(100px, 1.2fr) 1fr;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) 10.75rem;
 }
 
 .admin-grid-head {
   color: var(--muted);
   font-size: 0.72rem;
-  padding: 0 8px 8px;
+  padding: 0 4px 8px;
+}
+
+.admin-grid-head span:last-child {
+  text-align: right;
 }
 
 .admin-prayer-row {
   border-top: 1px solid var(--line);
-  padding: 14px 8px;
+  padding: 12px 4px;
 }
 
 .admin-prayer-row strong {
-  align-self: center;
   font-family: Charter, "Iowan Old Style", Georgia, serif;
+  font-weight: 700;
+  min-width: 0;
 }
 
 .time-field {
   cursor: pointer;
-  display: grid;
-  gap: 5px;
+  min-width: 0;
 }
 
 .time-field input {
   cursor: pointer;
+  display: block;
+  max-width: 100%;
+  padding-inline: 12px 8px;
   width: 100%;
+}
+
+.time-field input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  margin-inline-start: 2px;
+  opacity: 1;
 }
 
 .primary-button {
@@ -956,7 +978,13 @@ footer a {
   }
 
   .admin-prayer-row {
-    grid-template-columns: 0.75fr 1fr;
+    gap: 12px;
+    grid-template-columns: minmax(0, 1fr) 9.75rem;
+    padding: 12px 2px;
+  }
+
+  .time-field input {
+    font-size: 1rem;
   }
 
   .modal {

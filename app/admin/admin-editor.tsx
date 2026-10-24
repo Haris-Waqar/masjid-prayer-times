@@ -187,7 +187,9 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
         <div className="admin-prayer-row" key={prayer}>
           <strong>{prayer}</strong>
           <div className="time-field" onClick={() => openTimePicker(index)}>
-            <label htmlFor={`${prayer}-jamaat`}>Jamaat</label>
+            <label className="visually-hidden" htmlFor={`${prayer}-jamaat`}>
+              {prayer} jamaat
+            </label>
             <input
               ref={(element) => {
                 timeInputs.current[index] = element;
