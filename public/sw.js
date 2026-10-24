@@ -1,4 +1,4 @@
-const CACHE_NAME = "masjid-times-v2";
+const CACHE_NAME = "masjid-times-v3";
 const APP_SHELL = ["/", "/manifest.webmanifest", "/favicon.svg"];
 
 async function broadcastTimetableUpdate() {
@@ -38,21 +38,19 @@ self.addEventListener("fetch", (event) => {
 
   if (event.request.mode === "navigate" && url.pathname === "/") {
     event.respondWith(
-      caches.match("/").then((cached) => {
-        const update = refreshTimetableCache({ broadcast: Boolean(cached) }).catch(
-          () => undefined,
-        );
-        if (cached) {
-          event.waitUntil(update);
-          return cached;
-        }
-        return fetch(event.request).then((response) => {
+      fetch(event.request)
+        .then((response) => {
           if (response.ok) {
-            caches.open(CACHE_NAME).then((cache) => cache.put("/", response.clone()));
+            const copy = response.clone();
+            event.waitUntil(
+              caches.open(CACHE_NAME).then((cache) => cache.put("/", copy)),
+            );
           }
           return response;
-        });
-      }),
+        })
+        .catch(() =>
+          caches.match("/").then((cached) => cached || Response.error()),
+        ),
     );
     return;
   }
