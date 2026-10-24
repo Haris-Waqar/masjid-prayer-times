@@ -42,6 +42,11 @@ export function isPrayerName(value: string): value is PrayerName {
   return PRAYERS.includes(value as PrayerName);
 }
 
+export function normalizeTime(value: string): string | null {
+  const match = /^([01]\d|2[0-3]):([0-5]\d)(?::[0-5]\d(?:\.\d{1,6})?)?$/.exec(value);
+  return match ? `${match[1]}:${match[2]}` : null;
+}
+
 export function isTime(value: string): boolean {
-  return /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+  return normalizeTime(value) !== null;
 }

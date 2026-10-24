@@ -4,6 +4,7 @@ import {
   DEFAULT_PRAYER_TIMES,
   DEFAULT_SETTINGS,
   PRAYERS,
+  normalizeTime,
   type MosqueSettings,
   type PrayerTime,
 } from "@/lib/prayers";
@@ -52,7 +53,8 @@ export async function getPrayerSchedule(
     const times = PRAYERS.map((prayer) => {
       const saved = byPrayer.get(prayer);
       const fallback = DEFAULT_PRAYER_TIMES.find((item) => item.prayer === prayer)!;
-      return saved ? { prayer, jamaat: saved.jamaat } : fallback;
+      const jamaat = saved ? normalizeTime(saved.jamaat) : null;
+      return jamaat ? { prayer, jamaat } : fallback;
     });
     return { times, isPublished: PRAYERS.every((prayer) => byPrayer.has(prayer)) };
   } catch {

@@ -3,6 +3,7 @@ import {
   PRAYERS,
   isPrayerName,
   isTime,
+  normalizeTime,
   type PrayerTime,
 } from "@/lib/prayers";
 import { notifyPrayerChanges } from "@/lib/push";
@@ -27,22 +28,22 @@ async function publishSchedule(request: Request) {
     return Response.json({ error: "Choose a valid effective date." }, { status: 400 });
   }
   if (!Array.isArray(input.times) || input.times.length !== PRAYERS.length) {
-    return Response.json({ error: "All five prayer times are required." }, { status: 400 });
+    return Response.json({ error: "All five jamaat times are required." }, { status: 400 });
   }
 
   const normalized: PrayerTime[] = [];
   for (const item of input.times) {
+    const jamaat = item.jamaat ? normalizeTime(item.jamaat) : null;
     if (
       !item.prayer ||
       !isPrayerName(item.prayer) ||
-      !item.jamaat ||
-      !isTime(item.jamaat)
+      !jamaat
     ) {
-      return Response.json({ error: "One or more prayer times are invalid." }, { status: 400 });
+      return Response.json({ error: "One or more jamaat times are invalid." }, { status: 400 });
     }
     normalized.push({
       prayer: item.prayer,
-      jamaat: item.jamaat,
+      jamaat,
     });
   }
   if (new Set(normalized.map((item) => item.prayer)).size !== PRAYERS.length) {

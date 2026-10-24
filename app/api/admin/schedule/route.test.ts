@@ -93,4 +93,29 @@ describe("POST /api/admin/schedule", () => {
       { prayer: "Asr", oldJamaat: "16:15", newJamaat: "16:00" },
     ]);
   });
+
+  it("normalizes Supabase time values before publishing", async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: [], error: null });
+    vi.mocked(createAdminClient).mockReturnValue({ rpc } as never);
+    vi.mocked(notifyPrayerChanges).mockResolvedValue(0);
+    const databaseTimes = validTimes.map((time, index) => ({
+      ...time,
+      jamaat: index === 4 ? "19:15" : `${time.jamaat}:00`,
+    }));
+
+    const response = await POST(request({ date: "2026-10-24", times: databaseTimes }));
+
+    expect(response.status).toBe(200);
+    expect(rpc).toHaveBeenCalledWith("publish_prayer_schedule", {
+      p_date: "2026-10-24",
+      p_times: [
+        { prayer: "Fajr", jamaat: "05:30" },
+        { prayer: "Dhuhr", jamaat: "13:45" },
+        { prayer: "Asr", jamaat: "16:00" },
+        { prayer: "Maghrib", jamaat: "17:25" },
+        { prayer: "Isha", jamaat: "19:15" },
+      ],
+      p_changed_by: "imam@example.org",
+    });
+  });
 });
