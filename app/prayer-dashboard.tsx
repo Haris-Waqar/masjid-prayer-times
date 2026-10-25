@@ -593,12 +593,10 @@ export function PrayerDashboard({
 
       <footer>
         <p>{publicCopy.footer.en}</p>
-        {!canUpdateTimes ? (
-          <Link className="admin-entry-link" href="/admin">
-            <Settings size={14} aria-hidden="true" />
-            Admin
-          </Link>
-        ) : null}
+        <Link className="admin-entry-link" href="/admin">
+          <Settings size={14} aria-hidden="true" />
+          Admin
+        </Link>
       </footer>
     </main>
   );
