@@ -1,6 +1,11 @@
 export const PRAYERS = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"] as const;
+export const JUMUAH_PRAYER = "Jumu'ah" as const;
 
-export type PrayerName = (typeof PRAYERS)[number];
+/** All timetable rows: daily five, then Jumu'ah. */
+export const SCHEDULE_PRAYERS = [...PRAYERS, JUMUAH_PRAYER] as const;
+
+export type DailyPrayerName = (typeof PRAYERS)[number];
+export type PrayerName = DailyPrayerName | typeof JUMUAH_PRAYER;
 
 export type PrayerTime = {
   prayer: PrayerName;
@@ -29,6 +34,20 @@ export const DEFAULT_PRAYER_TIMES: PrayerTime[] = [
   { prayer: "Isha", jamaat: "19:30" },
 ];
 
+export const DEFAULT_JUMUAH_TIME: PrayerTime = {
+  prayer: JUMUAH_PRAYER,
+  jamaat: "13:45",
+};
+
+export function isJumuahPrayer(prayer: PrayerName): boolean {
+  return prayer === JUMUAH_PRAYER;
+}
+
+/** Stable DOM id fragment (apostrophe-safe). */
+export function prayerFieldId(prayer: PrayerName): string {
+  return prayer === JUMUAH_PRAYER ? "Jumuah" : prayer;
+}
+
 export function dateInTimezone(timezone: string, date = new Date()): string {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: timezone,
@@ -39,7 +58,9 @@ export function dateInTimezone(timezone: string, date = new Date()): string {
 }
 
 export function isPrayerName(value: string): value is PrayerName {
-  return PRAYERS.includes(value as PrayerName);
+  return (
+    PRAYERS.includes(value as DailyPrayerName) || value === JUMUAH_PRAYER
+  );
 }
 
 export function normalizeTime(value: string): string | null {
@@ -67,7 +88,10 @@ export function havePrayerTimesChanged(
   current: PrayerTime[],
   baseline: PrayerTime[],
 ): boolean {
+  if (current.length !== baseline.length) return true;
   return current.some(
-    (item, index) => item.jamaat !== baseline[index]?.jamaat,
+    (item, index) =>
+      item.prayer !== baseline[index]?.prayer ||
+      item.jamaat !== baseline[index]?.jamaat,
   );
 }

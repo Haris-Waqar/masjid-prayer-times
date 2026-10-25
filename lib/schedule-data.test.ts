@@ -42,4 +42,31 @@ describe("resolvePrayerSchedule", () => {
 
     expect(schedule.times[0]).toEqual({ prayer: "Fajr", jamaat: "05:15" });
   });
+
+  it("appends default Jumu'ah after Isha", () => {
+    const schedule = resolvePrayerSchedule(rows("2026-10-25", "05:30"), "2026-10-25");
+
+    expect(schedule.isPublished).toBe(true);
+    expect(schedule.times.map((item) => item.prayer)).toEqual([
+      "Fajr",
+      "Dhuhr",
+      "Asr",
+      "Maghrib",
+      "Isha",
+      "Jumu'ah",
+    ]);
+    expect(schedule.times[5]).toEqual({ prayer: "Jumu'ah", jamaat: "13:45" });
+  });
+
+  it("uses a saved Jumu'ah time when present", () => {
+    const schedule = resolvePrayerSchedule(
+      [
+        ...rows("2026-10-25", "05:30"),
+        { date: "2026-10-25", prayer: "Jumu'ah", jamaat: "13:30:00" },
+      ],
+      "2026-10-25",
+    );
+
+    expect(schedule.times[5]).toEqual({ prayer: "Jumu'ah", jamaat: "13:30" });
+  });
 });

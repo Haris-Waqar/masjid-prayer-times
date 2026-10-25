@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  SCHEDULE_PRAYERS,
   havePrayerTimesChanged,
   isScheduleDate,
   isTime,
@@ -39,6 +40,19 @@ describe("normalizeTime", () => {
   );
 });
 
+describe("SCHEDULE_PRAYERS", () => {
+  it("lists Jumu'ah after the five daily prayers", () => {
+    expect(SCHEDULE_PRAYERS).toEqual([
+      "Fajr",
+      "Dhuhr",
+      "Asr",
+      "Maghrib",
+      "Isha",
+      "Jumu'ah",
+    ]);
+  });
+});
+
 describe("havePrayerTimesChanged", () => {
   const baseline: PrayerTime[] = [
     { prayer: "Fajr", jamaat: "05:30" },
@@ -46,6 +60,7 @@ describe("havePrayerTimesChanged", () => {
     { prayer: "Asr", jamaat: "16:00" },
     { prayer: "Maghrib", jamaat: "17:25" },
     { prayer: "Isha", jamaat: "19:30" },
+    { prayer: "Jumu'ah", jamaat: "13:45" },
   ];
 
   it("returns false when every jamaat time is unchanged", () => {
@@ -55,6 +70,14 @@ describe("havePrayerTimesChanged", () => {
   it("returns true when any jamaat time changes", () => {
     const changed = baseline.map((item) =>
       item.prayer === "Asr" ? { ...item, jamaat: "16:15" } : item,
+    );
+
+    expect(havePrayerTimesChanged(changed, baseline)).toBe(true);
+  });
+
+  it("returns true when Jumu'ah changes", () => {
+    const changed = baseline.map((item) =>
+      item.prayer === "Jumu'ah" ? { ...item, jamaat: "13:30" } : item,
     );
 
     expect(havePrayerTimesChanged(changed, baseline)).toBe(true);

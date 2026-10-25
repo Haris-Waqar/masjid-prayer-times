@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("public timetable renders the mosque and five prayers", async ({
+test("public timetable renders the mosque and today's prayers", async ({
   page,
 }) => {
   await page.goto("/");
@@ -12,11 +12,20 @@ test("public timetable renders the mosque and five prayers", async ({
     page.getByRole("heading", { name: "Today's jamaat times" }),
   ).toBeVisible();
   const timetable = page.getByRole("list");
-  for (const prayer of ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"]) {
+  const expectedPrayers = [
+    "Fajr",
+    "Dhuhr",
+    "Asr",
+    "Maghrib",
+    "Isha",
+    "Jumu'ah",
+  ];
+  for (const prayer of expectedPrayers) {
     await expect(timetable.getByText(prayer, { exact: true })).toBeVisible();
   }
+  await expect(timetable.getByText("Friday", { exact: true })).toBeVisible();
   await expect(page.getByText("Begins", { exact: true })).toHaveCount(0);
-  await expect(timetable.getByRole("time")).toHaveCount(5);
+  await expect(timetable.getByRole("time")).toHaveCount(expectedPrayers.length);
   await expect(timetable.getByRole("time").first()).toHaveText(
     /^\d{1,2}:\d{2} [AP]M$/,
   );
@@ -256,6 +265,7 @@ test("schedule API rejects an unauthenticated write with JSON", async ({
         { prayer: "Asr", jamaat: "16:00" },
         { prayer: "Maghrib", jamaat: "17:25" },
         { prayer: "Isha", jamaat: "19:30" },
+        { prayer: "Jumu'ah", jamaat: "13:45" },
       ],
     },
   });

@@ -670,6 +670,38 @@ input:focus-visible {
   color: var(--white);
 }
 
+.schedule-list li.is-jumuah {
+  background: #f3e4e6;
+  color: #7a2f3a;
+  margin-top: 4px;
+}
+
+.schedule-list li.is-jumuah .row-arch {
+  color: #9a4552;
+}
+
+.schedule-list li.is-jumuah .prayer-name > .urdu {
+  color: #9a4552;
+}
+
+.schedule-list li.is-jumuah > time {
+  color: #7a2f3a;
+  font-weight: 700;
+}
+
+.prayer-name .friday-badge,
+.admin-prayer-row .friday-badge {
+  background: #7a2f3a;
+  border-radius: 999px;
+  color: var(--white);
+  font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 3px 7px;
+  text-transform: uppercase;
+}
+
 .row-arch {
   color: var(--brass-deep);
   fill: none;
@@ -1184,6 +1216,21 @@ footer a {
   font-weight: 700;
   gap: 8px;
   min-width: 0;
+}
+
+.admin-prayer-row.is-jumuah {
+  background: #f3e4e6;
+  border-radius: 12px;
+  color: #7a2f3a;
+  padding-inline: 8px;
+}
+
+.admin-prayer-row.is-jumuah strong .urdu {
+  color: #9a4552;
+}
+
+.admin-prayer-row strong .friday-badge {
+  margin-inline-start: 4px;
 }
 
 .admin-prayer-row strong .urdu {

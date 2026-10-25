@@ -3,7 +3,7 @@ import { getAdminSession } from "@/lib/admin";
 import { canEditSchedule } from "@/lib/admin-policy";
 import { PRAYER_SCHEDULE_CACHE_TAG } from "@/lib/cache-tags";
 import {
-  PRAYERS,
+  SCHEDULE_PRAYERS,
   dateInTimezone,
   isPrayerName,
   isScheduleDate,
@@ -72,9 +72,12 @@ async function publishSchedule(request: Request) {
   const dateError = await validateEffectiveDate(input.date);
   if (dateError) return Response.json({ error: dateError }, { status: 400 });
   const effectiveDate = input.date!;
-  if (!Array.isArray(input.times) || input.times.length !== PRAYERS.length) {
+  if (
+    !Array.isArray(input.times) ||
+    input.times.length !== SCHEDULE_PRAYERS.length
+  ) {
     return Response.json(
-      { error: "All five jamaat times are required." },
+      { error: "All five daily jamaat times and Jumu'ah are required." },
       { status: 400 },
     );
   }
@@ -93,7 +96,11 @@ async function publishSchedule(request: Request) {
       jamaat,
     });
   }
-  if (new Set(normalized.map((item) => item.prayer)).size !== PRAYERS.length) {
+  const uniquePrayers = new Set(normalized.map((item) => item.prayer));
+  if (
+    uniquePrayers.size !== SCHEDULE_PRAYERS.length ||
+    !SCHEDULE_PRAYERS.every((prayer) => uniquePrayers.has(prayer))
+  ) {
     return Response.json(
       { error: "Each prayer must appear exactly once." },
       { status: 400 },

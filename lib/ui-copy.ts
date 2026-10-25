@@ -11,6 +11,7 @@ export const PRAYER_URDU: Record<PrayerName, string> = {
   Asr: "عصر",
   Maghrib: "مغرب",
   Isha: "عشاء",
+  "Jumu'ah": "جمعہ",
 };
 
 export const publicCopy = {
@@ -26,6 +27,7 @@ export const publicCopy = {
   prayer: { en: "Prayer", ur: "نماز" },
   jamaat: { en: "Jamaat", ur: "جماعت" },
   nextBadge: { en: "Next", ur: "اگلی" },
+  fridayBadge: { en: "Friday", ur: "جمعہ" },
   today: { en: "Today", ur: "آج" },
   notify: { en: "Notify me if jamaat changes", ur: "جماعت بدلے تو اطلاع دیں" },
   alertsAfterPosting: {

@@ -14,7 +14,8 @@ or Segoe UI keeps controls highly legible without downloading web fonts.
 
 ## Layout
 
-Mobile puts the next jamaat first, then the five-row timetable and install action.
+Mobile puts the next jamaat first, then the timetable (five daily rows plus
+Jumu'ah) and install action.
 Desktop pairs a tall mihrab-shaped next-prayer field with the timetable. Content
 is left aligned except for the centered next-prayer focus.
 

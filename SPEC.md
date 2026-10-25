@@ -17,7 +17,8 @@ time. The public experience must be immediate and require no account.
 
 - Use Supabase password sign-in and database-backed `admin` and `super_admin` roles.
 - Reject every unauthorized write on the server.
-- Let an editor choose an effective date and update all five prayer rows.
+- Let an editor choose an effective date and update all five daily prayer rows
+  plus Jumu'ah (default 13:45), shown after Isha with a Friday marker.
 - Require an explicit confirmation before publishing.
 - Notify subscribers only when at least one jamaat time changed.
 - Record the prayer, old time, new time, editor and timestamp.

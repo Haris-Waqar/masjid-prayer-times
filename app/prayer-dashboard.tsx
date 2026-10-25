@@ -5,7 +5,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Bell, BellOff, BellRing, Clock, RefreshCw, Settings } from "lucide-react";
 import { NavigationPendingIcon } from "@/app/navigation-pending-icon";
-import type { MosqueSettings, PrayerTime } from "@/lib/prayers";
+import {
+  isJumuahPrayer,
+  type MosqueSettings,
+  type PrayerTime,
+} from "@/lib/prayers";
 import {
   PRAYER_URDU,
   publicCopy,
@@ -170,13 +174,21 @@ export function PrayerDashboard({
     return hours * 60 + minutes;
   }, [now, settings.timezone]);
 
-  const nextIndex = useMemo(() => {
-    const index = times.findIndex((item) => toMinutes(item.jamaat) > currentMinutes);
-    return index === -1 ? 0 : index;
-  }, [currentMinutes, times]);
+  // Jumu'ah is a Friday callout at the bottom; next jamaat uses the daily five.
+  const dailyTimes = useMemo(
+    () => times.filter((item) => !isJumuahPrayer(item.prayer)),
+    [times],
+  );
 
-  const nextPrayer = times[nextIndex];
-  const nextIsTomorrow = times.every(
+  const nextIndex = useMemo(() => {
+    const index = dailyTimes.findIndex(
+      (item) => toMinutes(item.jamaat) > currentMinutes,
+    );
+    return index === -1 ? 0 : index;
+  }, [currentMinutes, dailyTimes]);
+
+  const nextPrayer = dailyTimes[nextIndex];
+  const nextIsTomorrow = dailyTimes.every(
     (item) => toMinutes(item.jamaat) <= currentMinutes,
   );
   const remaining = Math.max(
@@ -513,10 +525,20 @@ export function PrayerDashboard({
           </div>
 
           <ol className="schedule-list">
-            {times.map((item, index) => {
-              const isNext = schedulePublished && index === nextIndex;
+            {times.map((item) => {
+              const isJumuah = isJumuahPrayer(item.prayer);
+              const dailyIndex = dailyTimes.findIndex(
+                (daily) => daily.prayer === item.prayer,
+              );
+              const isNext =
+                schedulePublished && !isJumuah && dailyIndex === nextIndex;
               return (
-                <li key={item.prayer} className={isNext ? "is-next" : undefined}>
+                <li
+                  key={item.prayer}
+                  className={
+                    isJumuah ? "is-jumuah" : isNext ? "is-next" : undefined
+                  }
+                >
                   <span className="prayer-name">
                     <svg
                       className="row-arch"
@@ -533,6 +555,11 @@ export function PrayerDashboard({
                     <span className="urdu" lang="ur" dir="rtl">
                       {PRAYER_URDU[item.prayer]}
                     </span>
+                    {isJumuah && (
+                      <small className="friday-badge">
+                        {publicCopy.fridayBadge.en}
+                      </small>
+                    )}
                   </span>
                   {schedulePublished ? (
                     <time dateTime={item.jamaat}>{displayTime(item.jamaat)}</time>

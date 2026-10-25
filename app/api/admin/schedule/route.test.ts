@@ -40,6 +40,7 @@ const validTimes: PrayerTime[] = [
   { prayer: "Asr", jamaat: "16:00" },
   { prayer: "Maghrib", jamaat: "17:25" },
   { prayer: "Isha", jamaat: "19:30" },
+  { prayer: "Jumu'ah", jamaat: "13:45" },
 ];
 const futureDate = "2099-10-24";
 const adminSession = {
@@ -157,6 +158,7 @@ describe("POST /api/admin/schedule", () => {
         { prayer: "Asr", jamaat: "16:00" },
         { prayer: "Maghrib", jamaat: "17:25" },
         { prayer: "Isha", jamaat: "19:15" },
+        { prayer: "Jumu'ah", jamaat: "13:45" },
       ],
       p_changed_by: "imam@example.org",
     });
@@ -170,6 +172,21 @@ describe("POST /api/admin/schedule", () => {
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
       error: "Choose today or a future effective date.",
+    });
+    expect(createAdminClient).not.toHaveBeenCalled();
+  });
+
+  it("rejects schedules that omit Jumu'ah", async () => {
+    const response = await POST(
+      request({
+        date: futureDate,
+        times: validTimes.filter((time) => time.prayer !== "Jumu'ah"),
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: "All five daily jamaat times and Jumu'ah are required.",
     });
     expect(createAdminClient).not.toHaveBeenCalled();
   });

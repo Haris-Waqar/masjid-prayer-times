@@ -6,11 +6,12 @@ import { Modal } from "@/app/components/modal";
 import { readApiResponse } from "@/lib/api-response";
 import { displayScheduleDate } from "@/lib/prayer-change-notification";
 import {
-  PRAYERS,
   havePrayerTimesChanged,
+  isJumuahPrayer,
+  prayerFieldId,
   type PrayerTime,
 } from "@/lib/prayers";
-import { PRAYER_URDU } from "@/lib/ui-copy";
+import { PRAYER_URDU, publicCopy } from "@/lib/ui-copy";
 
 type Props = {
   initialDate: string;
@@ -184,39 +185,52 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
         <span>Prayer</span>
         <span>Jamaat</span>
       </div>
-      {PRAYERS.map((prayer, index) => (
-        <div className="admin-prayer-row" key={prayer}>
-          <strong>
-            {prayer}
-            <span className="urdu" lang="ur">
-              {PRAYER_URDU[prayer]}
-            </span>
-          </strong>
-          <div className="time-field">
-            <label className="visually-hidden" htmlFor={`${prayer}-jamaat`}>
-              {prayer} jamaat
-            </label>
-            <div className="time-field-control">
-              <span className="time-field-display" aria-hidden="true">
-                {formatTime(times[index].jamaat)}
+      {times.map((item, index) => {
+        const fieldId = `${prayerFieldId(item.prayer)}-jamaat`;
+        return (
+          <div
+            className={
+              isJumuahPrayer(item.prayer)
+                ? "admin-prayer-row is-jumuah"
+                : "admin-prayer-row"
+            }
+            key={item.prayer}
+          >
+            <strong>
+              {item.prayer}
+              <span className="urdu" lang="ur">
+                {PRAYER_URDU[item.prayer]}
               </span>
-              <Clock3 className="time-field-icon" size={16} aria-hidden="true" />
-              <input
-                ref={(element) => {
-                  timeInputs.current[index] = element;
-                }}
-                id={`${prayer}-jamaat`}
-                className="time-field-input"
-                type="time"
-                value={times[index].jamaat}
-                onChange={(event) => updateTime(index, event.target.value)}
-                onClick={() => openTimePicker(index)}
-                disabled={loadingDate || saving}
-              />
+              {isJumuahPrayer(item.prayer) && (
+                <small className="friday-badge">{publicCopy.fridayBadge.en}</small>
+              )}
+            </strong>
+            <div className="time-field">
+              <label className="visually-hidden" htmlFor={fieldId}>
+                {item.prayer} jamaat
+              </label>
+              <div className="time-field-control">
+                <span className="time-field-display" aria-hidden="true">
+                  {formatTime(item.jamaat)}
+                </span>
+                <Clock3 className="time-field-icon" size={16} aria-hidden="true" />
+                <input
+                  ref={(element) => {
+                    timeInputs.current[index] = element;
+                  }}
+                  id={fieldId}
+                  className="time-field-input"
+                  type="time"
+                  value={item.jamaat}
+                  onChange={(event) => updateTime(index, event.target.value)}
+                  onClick={() => openTimePicker(index)}
+                  disabled={loadingDate || saving}
+                />
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
 
       <button
         className="primary-button"
