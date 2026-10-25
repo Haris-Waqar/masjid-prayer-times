@@ -3,16 +3,7 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  Bell,
-  BellOff,
-  BellRing,
-  CalendarDays,
-  MapPin,
-  RefreshCw,
-  Share2,
-  WifiOff,
-} from "lucide-react";
+import { Bell, BellOff, BellRing, Clock, RefreshCw } from "lucide-react";
 import { NavigationPendingIcon } from "@/app/navigation-pending-icon";
 import type { MosqueSettings, PrayerTime } from "@/lib/prayers";
 import {
@@ -49,6 +40,17 @@ function displayTime(value: string) {
     timeZone: "UTC",
   }).format(new Date(Date.UTC(2020, 0, 1, hours, minutes)));
 }
+
+function splitTime(value: string) {
+  const formatted = displayTime(value);
+  const match = formatted.match(/^(.*?)\s*(AM|PM)$/i);
+  return match
+    ? { value: match[1], suffix: match[2].toUpperCase() }
+    : { value: formatted, suffix: "" };
+}
+
+const DIAMONDS = Array.from({ length: 13 });
+const TASSELS = Array.from({ length: 28 });
 
 function urlBase64ToUint8Array(value: string) {
   const padding = "=".repeat((4 - (value.length % 4)) % 4);
@@ -294,12 +296,38 @@ export function PrayerDashboard({
     setStatusMessage(publicCopy.installHint);
   }
 
+  function handleBellClick() {
+    if (alertState === "blocked") {
+      setStatusMessage(publicCopy.alertsBlocked);
+      return;
+    }
+    if (showDisableAlerts) {
+      void disableNotifications();
+      return;
+    }
+    void enableNotifications();
+  }
+
+  const bellBusy = alertState === "checking" || alertState === "working" || isDisablingAlerts;
+  const bellDisabled = bellBusy || alertState === "unsupported";
+  const bellLabel = !schedulePublished
+    ? publicCopy.alertsAfterPosting.en
+    : alertState === "blocked"
+      ? publicCopy.alertsBlocked.en
+      : alertState === "unsupported"
+        ? publicCopy.alertsUnavailable.en
+        : showDisableAlerts
+          ? publicCopy.disableAlerts.en
+          : publicCopy.notify.en;
+
   const formattedDate = new Intl.DateTimeFormat("en", {
     weekday: "long",
     day: "numeric",
     month: "long",
     timeZone: "UTC",
   }).format(new Date(`${date}T12:00:00Z`));
+
+  const nextTime = schedulePublished ? splitTime(nextPrayer.jamaat) : null;
 
   return (
     <main className="app-shell">
@@ -315,168 +343,148 @@ export function PrayerDashboard({
         <div className="brand-copy">
           <p className="brand-name">{settings.name}</p>
           <p className="brand-location">
-            <MapPin size={14} aria-hidden="true" /> {settings.location}
+            {settings.location} · {formattedDate}
           </p>
         </div>
-        <Link
-          className="icon-button"
-          href="/admin"
-          aria-label="Open admin area"
+        <button
+          type="button"
+          className="bell-button"
+          data-state={
+            showDisableAlerts ? "on" : alertState === "blocked" ? "blocked" : "off"
+          }
+          onClick={handleBellClick}
+          disabled={bellDisabled}
+          aria-pressed={alertState === "enabled"}
+          aria-label={bellLabel}
+          title={bellLabel}
         >
-          <NavigationPendingIcon kind="admin" size={21} />
-        </Link>
+          {bellBusy ? (
+            <BellRing className="is-spinning" size={20} aria-hidden="true" />
+          ) : alertState === "blocked" ? (
+            <BellOff size={20} aria-hidden="true" />
+          ) : showDisableAlerts ? (
+            <BellRing size={20} aria-hidden="true" />
+          ) : (
+            <Bell size={20} aria-hidden="true" />
+          )}
+        </button>
       </header>
 
+      {alertState === "blocked" && (
+        <p className="alert-banner" role="status">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 8v5" />
+            <path d="M12 16h.01" />
+          </svg>
+          <span>
+            Notifications are blocked. Allow them in your browser&apos;s site
+            settings to get jamaat reminders.
+          </span>
+        </p>
+      )}
+
       <div className="page-grid">
-        <section className="next-prayer-panel" aria-labelledby="next-prayer-heading">
-          <div className="arch-line" aria-hidden="true">
-            <svg
-              className="musalla-niche"
-              viewBox="0 0 100 160"
-              preserveAspectRatio="none"
-            >
-              <defs>
-                <pattern
-                  id="musalla-weave"
-                  width="6"
-                  height="6"
-                  patternUnits="userSpaceOnUse"
-                  patternTransform="rotate(-18)"
-                >
-                  <line
-                    x1="0"
-                    y1="0"
-                    x2="0"
-                    y2="6"
-                    stroke="#d1a95f"
-                    strokeOpacity="0.14"
-                    strokeWidth="1"
-                    vectorEffect="non-scaling-stroke"
-                  />
-                </pattern>
-              </defs>
-              <path
-                d="M 4 156 V 70 C 4 47 20 30 39 18 C 46 14 50 8 50 2 C 50 8 54 14 61 18 C 80 30 96 47 96 70 V 156 Z"
-                fill="url(#musalla-weave)"
-                stroke="#d1a95f"
-                strokeOpacity="0.44"
-                strokeWidth="1"
-                strokeLinejoin="round"
-                vectorEffect="non-scaling-stroke"
-              />
-            </svg>
-          </div>
-          <p className="today-line">
-            <CalendarDays size={17} aria-hidden="true" /> {formattedDate}
-          </p>
-          <div className="next-prayer-copy">
-            {schedulePublished ? (
-              <>
-                <p id="next-prayer-heading">
-                  {publicCopy.nextJamaat.en}
-                  <span className="action-urdu" lang="ur">
-                    {publicCopy.nextJamaat.ur}
-                  </span>
-                </p>
-                <h1>{nextPrayer.prayer}</h1>
-                <p className="urdu prayer-urdu" lang="ur" dir="rtl">
-                  {PRAYER_URDU[nextPrayer.prayer]}
-                </p>
-                <time dateTime={nextPrayer.jamaat}>
-                  {displayTime(nextPrayer.jamaat)}
-                </time>
-                <p className="countdown" aria-live="polite">
-                  <span>
-                    {now
-                      ? remainingCopy(
-                          Math.floor(remaining / 60),
-                          remaining % 60,
-                          nextIsTomorrow,
-                        ).en
-                      : publicCopy.calculating.en}
-                  </span>
-                  <span className="countdown-urdu" lang="ur" dir="rtl">
-                    {now
-                      ? remainingCopy(
-                          Math.floor(remaining / 60),
-                          remaining % 60,
-                          nextIsTomorrow,
-                        ).ur
-                      : publicCopy.calculating.ur}
-                  </span>
-                </p>
-              </>
-            ) : (
-              <>
-                <p id="next-prayer-heading">
-                  {publicCopy.todaysTimes.en}
-                  <span className="action-urdu" lang="ur">
-                    {publicCopy.todaysTimes.ur}
-                  </span>
-                </p>
-                <h1 className="awaiting-title">{publicCopy.timesNotPosted.en}</h1>
-                <p className="countdown">
-                  <span>{publicCopy.timesNotPostedDetail.en}</span>
-                  <span className="action-urdu" lang="ur">
-                    {publicCopy.timesNotPostedDetail.ur}
-                  </span>
-                </p>
-              </>
-            )}
-          </div>
-          {showDisableAlerts ? (
-            <button
-              className="notify-disable"
-              type="button"
-              onClick={disableNotifications}
-              disabled={isDisablingAlerts}
-              aria-label={
-                isDisablingAlerts ? publicCopy.disablingAlerts.en : publicCopy.disableAlerts.en
-              }
-              title={publicCopy.disableAlerts.en}
-            >
-              {isDisablingAlerts ? (
-                <BellRing className="is-spinning" size={20} aria-hidden="true" />
+        <div className="next-prayer-wrap">
+          <section
+            className="next-prayer-panel"
+            aria-labelledby="next-prayer-heading"
+          >
+            <div className="mihrab-arc" aria-hidden="true" />
+            <div className="mihrab-arc mihrab-arc-inner" aria-hidden="true" />
+            <div className="next-prayer-copy">
+              {schedulePublished && nextTime ? (
+                <>
+                  <svg
+                    className="minaret"
+                    width="22"
+                    height="34"
+                    viewBox="0 0 22 34"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.5}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M11 0v6" />
+                    <path d="M6 10h10l-1-4H7z" />
+                    <path d="M5 10c0 8 2 14 6 16 4-2 6-8 6-16" />
+                    <path d="M11 26v4" />
+                    <circle cx="11" cy="17" r="2" />
+                  </svg>
+                  <p id="next-prayer-heading" className="next-kicker">
+                    <span>{publicCopy.nextJamaat.en}</span>
+                    <span className="kicker-urdu" lang="ur" dir="rtl">
+                      {publicCopy.nextJamaat.ur}
+                    </span>
+                  </p>
+                  <p className="next-name">
+                    <span>{nextPrayer.prayer}</span>
+                    <span className="name-diamond" aria-hidden="true" />
+                    <span className="name-urdu" lang="ur" dir="rtl">
+                      {PRAYER_URDU[nextPrayer.prayer]}
+                    </span>
+                  </p>
+                  <time className="next-time" dateTime={nextPrayer.jamaat}>
+                    {nextTime.value}
+                    {nextTime.suffix && (
+                      <span className="next-suffix">{nextTime.suffix}</span>
+                    )}
+                  </time>
+                  <p className="countdown" aria-live="polite">
+                    <Clock size={16} aria-hidden="true" />
+                    <span>
+                      {now
+                        ? remainingCopy(
+                            Math.floor(remaining / 60),
+                            remaining % 60,
+                            nextIsTomorrow,
+                          ).en
+                        : publicCopy.calculating.en}
+                    </span>
+                  </p>
+                  <div className="diamond-row" aria-hidden="true">
+                    {DIAMONDS.map((_, index) => (
+                      <span key={index} />
+                    ))}
+                  </div>
+                </>
               ) : (
-                <BellOff size={20} aria-hidden="true" />
+                <>
+                  <p id="next-prayer-heading" className="next-kicker">
+                    <span>{publicCopy.todaysTimes.en}</span>
+                    <span className="kicker-urdu" lang="ur" dir="rtl">
+                      {publicCopy.todaysTimes.ur}
+                    </span>
+                  </p>
+                  <h1 className="awaiting-title">{publicCopy.timesNotPosted.en}</h1>
+                  <p className="awaiting-detail">
+                    <span>{publicCopy.timesNotPostedDetail.en}</span>
+                    <span className="name-urdu" lang="ur" dir="rtl">
+                      {publicCopy.timesNotPostedDetail.ur}
+                    </span>
+                  </p>
+                </>
               )}
-            </button>
-          ) : (
-            <button
-              className="notify-button"
-              type="button"
-              onClick={enableNotifications}
-              disabled={
-                !schedulePublished ||
-                alertState === "checking" ||
-                alertState === "working" ||
-                alertState === "unsupported" ||
-                alertState === "blocked"
-              }
-            >
-              {alertState === "working" || alertState === "checking" ? (
-                <BellRing className="is-spinning" size={19} />
-              ) : (
-                <Bell size={19} />
-              )}
-              <ActionLabel
-                text={
-                  !schedulePublished
-                    ? publicCopy.alertsAfterPosting
-                    : alertState === "checking"
-                      ? publicCopy.checkingAlerts
-                      : alertState === "working"
-                        ? publicCopy.enablingAlerts
-                        : alertState === "blocked"
-                          ? publicCopy.alertsBlocked
-                          : alertState === "unsupported"
-                            ? publicCopy.alertsUnavailable
-                            : publicCopy.notify
-                }
-              />
-            </button>
-          )}
-        </section>
+            </div>
+          </section>
+          <div className="mihrab-tassels" aria-hidden="true">
+            {TASSELS.map((_, index) => (
+              <span key={index} />
+            ))}
+          </div>
+        </div>
 
         <section
           className="schedule-panel"
@@ -485,12 +493,10 @@ export function PrayerDashboard({
         >
           <div className="section-heading">
             <div>
-              <h2 id="schedule-heading">
-                {publicCopy.todaysTimes.en}
-                <span className="heading-urdu" lang="ur">
-                  {publicCopy.todaysTimes.ur}
-                </span>
-              </h2>
+              <h2 id="schedule-heading">{publicCopy.todaysTimes.en}</h2>
+              <span className="heading-urdu" lang="ur" dir="rtl">
+                {publicCopy.todaysTimes.ur}
+              </span>
             </div>
             <button
               className="refresh-button"
@@ -504,73 +510,70 @@ export function PrayerDashboard({
             </button>
           </div>
 
-          <div className="schedule-head" aria-hidden="true">
-            <span>{publicCopy.prayer.en}</span>
-            <span>{publicCopy.jamaat.en}</span>
-          </div>
           <ol className="schedule-list">
-            {times.map((item, index) => (
-              <li
-                key={item.prayer}
-                className={schedulePublished && index === nextIndex ? "is-next" : undefined}
-              >
-                <span className="prayer-name">
-                  <span>{item.prayer}</span>
-                  <span className="urdu" lang="ur" dir="rtl">
-                    {PRAYER_URDU[item.prayer]}
+            {times.map((item, index) => {
+              const isNext = schedulePublished && index === nextIndex;
+              return (
+                <li key={item.prayer} className={isNext ? "is-next" : undefined}>
+                  <span className="prayer-name">
+                    <svg
+                      className="row-arch"
+                      width="14"
+                      height="18"
+                      viewBox="0 0 14 18"
+                      fill="none"
+                      strokeWidth={1.5}
+                      aria-hidden="true"
+                    >
+                      <path d="M1 17V8a6 6 0 0 1 12 0v9z" />
+                    </svg>
+                    <span>{item.prayer}</span>
+                    <span className="urdu" lang="ur" dir="rtl">
+                      {PRAYER_URDU[item.prayer]}
+                    </span>
                   </span>
-                  {schedulePublished && index === nextIndex && (
-                    <small>{publicCopy.nextBadge.en}</small>
+                  {schedulePublished ? (
+                    <time dateTime={item.jamaat}>{displayTime(item.jamaat)}</time>
+                  ) : (
+                    <span className="unpublished-time">—</span>
                   )}
-                </span>
-                {schedulePublished ? (
-                  <time dateTime={item.jamaat}>{displayTime(item.jamaat)}</time>
-                ) : (
-                  <span className="unpublished-time">—</span>
-                )}
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ol>
-          {schedulePublished ? (
-            <p className="updated-note">
-              {updatedCopy(
-                new Intl.DateTimeFormat("en", {
-                  day: "numeric",
-                  month: "short",
-                  hour: "numeric",
-                  minute: "2-digit",
-                  timeZone: settings.timezone,
-                }).format(new Date(settings.updatedAt)),
-              ).en}
-            </p>
-          ) : (
-            <p className="unpublished-note">{publicCopy.unposted.en}</p>
-          )}
+
+          <div className="schedule-foot">
+            {schedulePublished ? (
+              <span className="updated-note">
+                {updatedCopy(
+                  new Intl.DateTimeFormat("en", {
+                    day: "numeric",
+                    month: "short",
+                    hour: "numeric",
+                    minute: "2-digit",
+                    timeZone: settings.timezone,
+                  }).format(new Date(settings.updatedAt)),
+                ).en}
+              </span>
+            ) : (
+              <span className="unpublished-note">{publicCopy.unposted.en}</span>
+            )}
+            <Link className="update-link" href="/admin">
+              <NavigationPendingIcon kind="admin" size={15} />
+              <span>Update times</span>
+            </Link>
+          </div>
         </section>
 
         {!isAppInstalled && (
           <aside className="utility-panel" aria-label={publicCopy.appOptions.en}>
             <div className="utility-copy">
-              <Share2 size={22} aria-hidden="true" />
-              <div>
-                <h2>{publicCopy.keepHandy.en}</h2>
-                <p className="action-urdu" lang="ur">
-                  {publicCopy.keepHandy.ur}
-                </p>
-              </div>
+              <h2>{publicCopy.keepHandy.en}</h2>
+              <p>{publicCopy.offline.en}</p>
             </div>
             <button className="secondary-button" type="button" onClick={installApp}>
-              <ActionLabel text={publicCopy.installApp} />
+              {publicCopy.installApp.en}
             </button>
-            <div className="offline-note">
-              <WifiOff size={17} aria-hidden="true" />
-              <span>
-                {publicCopy.offline.en}
-                <span className="action-urdu" lang="ur">
-                  {publicCopy.offline.ur}
-                </span>
-              </span>
-            </div>
           </aside>
         )}
       </div>
@@ -588,16 +591,5 @@ export function PrayerDashboard({
         <p>{publicCopy.footer.en}</p>
       </footer>
     </main>
-  );
-}
-
-function ActionLabel({ text }: { text: BilingualText }) {
-  return (
-    <span className="action-label">
-      <span>{text.en}</span>
-      <span className="action-urdu" lang="ur">
-        {text.ur}
-      </span>
-    </span>
   );
 }

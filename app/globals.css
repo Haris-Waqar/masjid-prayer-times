@@ -1,14 +1,19 @@
 :root {
-  --ink: #14201e;
+  --ink: #1b1a15;
   --forest: #103e39;
   --jade: #2d766d;
-  --jade-light: #dcece7;
-  --brass: #d1a95f;
-  --paper: #f6f8f3;
+  --jade-light: #e4efe9;
+  --brass: #d9a84b;
+  --brass-soft: #e7c987;
+  --brass-deep: #b9893a;
+  --paper: #f6f1e6;
+  --card: #fffdf8;
   --white: #ffffff;
-  --line: #dbe2da;
-  --muted: #63706d;
+  --line: #e6dcc6;
+  --muted: #5a5444;
   --danger: #a33d33;
+  --amber-bg: #fbeacb;
+  --amber-ink: #57400f;
   --shadow: 0 20px 50px rgb(16 62 57 / 10%);
 }
 
@@ -26,9 +31,9 @@ body {
   margin: 0;
   min-height: 100%;
   background:
-    radial-gradient(circle at 12% 0%, rgb(209 169 95 / 13%), transparent 26rem),
+    radial-gradient(circle at 12% 0%, rgb(217 168 75 / 10%), transparent 26rem),
     var(--paper);
-  font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+  font-family: var(--font-dm-sans), "Avenir Next", Avenir, "Segoe UI", sans-serif;
 }
 
 button,
@@ -136,10 +141,10 @@ input:focus-visible {
 }
 
 .brand-name {
-  font-family: Charter, "Iowan Old Style", Georgia, serif;
-  font-size: 1.13rem;
+  color: var(--forest);
+  font-size: 1.25rem;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
 }
 
 .brand-location {
@@ -183,150 +188,239 @@ input:focus-visible {
   max-width: 1120px;
 }
 
-.next-prayer-panel {
-  background: var(--forest);
-  border-radius: 160px 160px 30px 30px;
-  box-shadow: var(--shadow);
-  color: var(--white);
+.next-prayer-wrap {
   display: flex;
   flex-direction: column;
-  min-height: 430px;
-  overflow: hidden;
-  padding: 30px 28px 22px;
-  position: relative;
 }
 
-.arch-line {
-  background:
-    repeating-linear-gradient(
-      45deg,
-      rgb(209 169 95 / 20%) 0 1px,
-      transparent 1px 5px
-    ),
-    repeating-linear-gradient(
-      -45deg,
-      rgb(209 169 95 / 14%) 0 1px,
-      transparent 1px 5px
-    );
-  border: 1px solid rgb(209 169 95 / 48%);
-  border-radius: 130px 130px 8px 8px;
-  bottom: 96px;
-  left: 50%;
-  position: absolute;
-  top: 56px;
-  transform: translateX(-50%);
-  pointer-events: none;
-  width: 210px;
-}
-
-.arch-line::before {
+.next-prayer-panel {
   background: var(--forest);
-  border: 1px solid rgb(209 169 95 / 30%);
-  border-radius: 120px 120px 5px 5px;
-  content: "";
-  inset: 8px;
-  position: absolute;
-}
-
-.musalla-niche {
-  height: calc(100% - 35px);
-  left: 19px;
-  overflow: visible;
-  position: absolute;
-  top: 17px;
-  width: calc(100% - 38px);
-}
-
-.today-line {
-  align-items: center;
-  color: #cadbd5;
-  display: flex;
-  font-size: 0.86rem;
-  gap: 8px;
-  justify-content: center;
-  margin: 0;
+  border-radius: 50% 50% 16px 16px / 130px 130px 16px 16px;
+  box-shadow: var(--shadow);
+  color: var(--white);
+  overflow: hidden;
+  padding: 14px;
   position: relative;
-  z-index: 1;
+}
+
+.mihrab-arc {
+  border: 1.5px solid var(--brass);
+  border-radius: 50% 50% 10px 10px / 120px 120px 10px 10px;
+  inset: 10px;
+  pointer-events: none;
+  position: absolute;
+}
+
+.mihrab-arc-inner {
+  border-color: rgb(217 168 75 / 45%);
+  border-radius: 50% 50% 6px 6px / 112px 112px 6px 6px;
+  border-width: 1px;
+  inset: 18px;
 }
 
 .next-prayer-copy {
   align-items: center;
   display: flex;
-  flex: 1 1 auto;
   flex-direction: column;
-  margin-top: 36px;
+  gap: 10px;
+  padding: 36px 22px 20px;
   position: relative;
+  text-align: center;
   z-index: 1;
 }
 
-.next-prayer-copy > p:first-child,
-.next-kicker {
+.minaret {
   color: var(--brass);
-  font-size: 0.9rem;
+}
+
+.next-kicker {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
   margin: 0;
-  text-align: center;
 }
 
-.next-kicker p {
-  margin: 0;
-}
-
-.next-prayer-copy h1 {
-  font-family: Charter, "Iowan Old Style", Georgia, serif;
-  font-size: clamp(3.4rem, 16vw, 5.6rem);
-  font-weight: 500;
-  letter-spacing: -0.055em;
-  line-height: 1;
-  margin: 12px 0 0;
-}
-
-.next-prayer-copy .awaiting-title {
-  font-size: clamp(2.3rem, 10vw, 4rem);
-  line-height: 1;
-  max-width: 460px;
-  text-align: center;
-}
-
-.next-prayer-copy time {
-  color: #edf6f2;
-  font-size: 1.35rem;
-  font-variant-numeric: tabular-nums;
+.next-kicker > span:first-child {
+  color: var(--brass-soft);
+  font-size: 0.72rem;
   font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
-.prayer-urdu {
-  color: #edf6f2;
+.kicker-urdu {
+  color: var(--brass-soft);
+  font-family: var(--font-noto-nastaliq), "Noto Naskh Arabic", "Geeza Pro", serif;
+  font-size: 0.82rem;
+  line-height: 1.9;
+}
+
+.next-name {
+  align-items: baseline;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin: 0;
+}
+
+.next-name > span:first-child {
+  font-size: 1.65rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.name-diamond {
+  background: var(--brass);
+  height: 6px;
+  transform: rotate(45deg);
+  width: 6px;
+}
+
+.name-urdu {
+  font-family: var(--font-noto-nastaliq), "Noto Naskh Arabic", "Geeza Pro", serif;
   font-size: 1.35rem;
-  line-height: 1.8;
-  margin: 10px 0 2px;
-  opacity: 0.92;
+  line-height: 2.2;
+}
+
+.next-time {
+  font-size: clamp(3.4rem, 15vw, 3.9rem);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.next-suffix {
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  margin-left: 6px;
+}
+
+.awaiting-title {
+  font-size: clamp(1.9rem, 8vw, 2.4rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin: 2px 0 0;
+}
+
+.awaiting-detail {
+  color: #cadbd5;
+  display: flex;
+  flex-direction: column;
+  font-size: 0.9rem;
+  gap: 2px;
+  margin: 0;
+}
+
+.awaiting-detail .name-urdu {
+  color: var(--brass-soft);
+  font-size: 1.05rem;
+  line-height: 1.9;
 }
 
 .countdown {
   align-items: center;
-  background: rgb(255 255 255 / 9%);
-  border: 1px solid rgb(255 255 255 / 11%);
+  background: var(--brass);
   border-radius: 999px;
-  color: #cfe1db;
-  display: flex;
-  flex-direction: column;
-  font-size: 0.78rem;
-  margin: 18px 0 0;
-  max-width: calc(100% - 12px);
-  padding: 8px 16px 9px;
-  text-align: center;
-  width: max-content;
+  color: #1f1a0e;
+  display: inline-flex;
+  font-size: 0.88rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  gap: 6px;
+  margin: 4px 0 0;
+  min-height: 32px;
+  padding: 0 14px;
 }
 
-.countdown-urdu {
-  direction: rtl;
-  display: block;
-  font-size: 0.84rem;
-  line-height: 1.7;
+.diamond-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.diamond-row span {
+  background: var(--brass);
+  height: 6px;
+  opacity: 0.75;
+  transform: rotate(45deg);
+  width: 6px;
+}
+
+.mihrab-tassels {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 16px;
+}
+
+.mihrab-tassels span {
+  background: var(--brass-deep);
+  border-radius: 0 0 1px 1px;
+  height: 10px;
+  width: 2px;
+}
+
+.bell-button {
+  align-items: center;
+  background: var(--card);
+  border: 1.5px solid #d8ccb0;
+  border-radius: 22px;
+  color: var(--forest);
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 44px;
+  justify-content: center;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease,
+    opacity 150ms ease;
+  width: 44px;
+}
+
+.bell-button[data-state="on"] {
+  background: var(--forest);
+  border-color: var(--forest);
+  color: var(--white);
+}
+
+.bell-button[data-state="blocked"] {
+  background: #efeadf;
+  border-color: #c4b898;
+  border-style: dashed;
+  color: #736b58;
+}
+
+.bell-button:not(:disabled):hover {
+  border-color: var(--brass);
+}
+
+.bell-button:disabled {
+  cursor: default;
+  opacity: 0.85;
+}
+
+.alert-banner {
+  align-items: flex-start;
+  background: var(--amber-bg);
+  border-radius: 12px;
+  color: var(--amber-ink);
+  display: flex;
+  font-size: 0.82rem;
+  gap: 8px;
+  line-height: 1.4;
+  margin: 0 auto;
+  max-width: 1120px;
+  padding: 10px 12px;
+}
+
+.alert-banner svg {
+  flex: 0 0 auto;
   margin-top: 1px;
-  text-align: center;
-  unicode-bidi: isolate;
-  white-space: nowrap;
 }
 
 .action-label {
@@ -341,7 +435,7 @@ input:focus-visible {
 .action-urdu {
   color: var(--muted);
   display: block;
-  font-family: "Noto Naskh Arabic", "Geeza Pro", "Arial", sans-serif;
+  font-family: var(--font-noto-nastaliq), "Noto Naskh Arabic", "Geeza Pro", "Arial", sans-serif;
   font-size: 0.78rem;
   font-weight: 500;
   letter-spacing: 0;
@@ -454,13 +548,13 @@ input:focus-visible {
 .schedule-panel,
 .utility-panel,
 .admin-card {
-  background: rgb(255 255 255 / 90%);
+  background: var(--card);
   border: 1px solid var(--line);
-  border-radius: 24px;
+  border-radius: 18px;
 }
 
 .schedule-panel {
-  padding: 24px 20px 16px;
+  padding: 16px 12px 8px;
 }
 
 .section-heading {
@@ -472,25 +566,26 @@ input:focus-visible {
 .section-heading h2,
 .utility-copy h2,
 .admin-title {
-  font-family: Charter, "Iowan Old Style", Georgia, serif;
-  letter-spacing: -0.035em;
+  font-family: inherit;
+  letter-spacing: -0.02em;
 }
 
 .section-heading h2 {
-  font-size: 1.8rem;
-  line-height: 1.1;
-  margin: 3px 0 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 0;
 }
 
 .heading-urdu {
   color: var(--muted);
   display: block;
-  font-family: "Noto Naskh Arabic", "Geeza Pro", "Arial", sans-serif;
-  font-size: 1rem;
+  font-family: var(--font-noto-nastaliq), "Noto Naskh Arabic", "Geeza Pro", serif;
+  font-size: 0.78rem;
   font-weight: 500;
   letter-spacing: 0;
   line-height: 1.7;
-  margin-top: 6px;
+  margin-top: 2px;
 }
 
 .refresh-button,
@@ -540,52 +635,83 @@ input:focus-visible {
   margin: 0;
 }
 
-.schedule-head,
-.schedule-list li {
-  align-items: center;
-  display: grid;
-  grid-template-columns: 1fr 0.85fr;
-}
-
-.schedule-head {
-  color: var(--muted);
-  font-size: 0.71rem;
-  margin-top: 24px;
-  padding: 0 12px 8px;
-}
-
-.schedule-head span:not(:first-child),
-.schedule-list li > time {
-  text-align: right;
-}
-
 .schedule-list {
+  display: flex;
+  flex-direction: column;
   list-style: none;
-  margin: 0;
+  margin: 8px 0 0;
   padding: 0;
 }
 
 .schedule-list li {
-  border-top: 1px solid var(--line);
-  min-height: 62px;
-  padding: 0 12px;
+  align-items: center;
+  border-radius: 12px;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  min-height: 52px;
+  padding: 0 8px;
 }
 
 .schedule-list li.is-next {
-  background: var(--jade-light);
-  border: 0;
-  border-radius: 15px;
-  color: var(--forest);
-  margin: 5px 0;
+  background: var(--forest);
+  color: var(--white);
 }
 
-.schedule-list li > time {
-  font-size: 0.91rem;
+.row-arch {
+  color: var(--brass-deep);
+  fill: none;
+  flex: 0 0 auto;
+  stroke: currentColor;
+}
+
+.schedule-list li.is-next .row-arch {
+  color: var(--brass);
+  fill: rgb(217 168 75 / 25%);
+}
+
+.schedule-list li > time,
+.schedule-list li .unpublished-time {
+  font-size: 1rem;
   font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
-.schedule-list li > time:last-child {
+.schedule-list li.is-next > time {
   font-weight: 700;
+}
+
+.schedule-foot {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  padding: 4px 6px 2px 8px;
+}
+
+.schedule-foot .updated-note,
+.schedule-foot .unpublished-note {
+  font-size: 0.74rem;
+  margin: 0;
+  text-align: left;
+}
+
+.update-link {
+  align-items: center;
+  color: var(--forest);
+  display: inline-flex;
+  font-size: 0.82rem;
+  font-weight: 600;
+  gap: 5px;
+  min-height: 44px;
+  padding: 0 6px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.update-link:hover {
+  color: var(--jade);
 }
 
 .unpublished-time {
@@ -602,13 +728,24 @@ input:focus-visible {
 }
 
 .prayer-name {
-  align-items: baseline;
+  align-items: center;
   display: flex;
-  flex-wrap: wrap;
-  font-family: Charter, "Iowan Old Style", Georgia, serif;
-  font-size: 1.07rem;
+  font-size: 1rem;
+  font-weight: 500;
+  gap: 10px;
+  min-width: 0;
+}
+
+.schedule-list li.is-next .prayer-name {
   font-weight: 700;
-  gap: 8px;
+}
+
+.prayer-name > .urdu {
+  color: var(--muted);
+}
+
+.schedule-list li.is-next .prayer-name > .urdu {
+  color: var(--brass-soft);
 }
 
 .prayer-name small {
@@ -632,7 +769,7 @@ input:focus-visible {
 }
 
 .urdu {
-  font-family: "Noto Naskh Arabic", "Geeza Pro", "Arial", sans-serif;
+  font-family: var(--font-noto-nastaliq), "Noto Naskh Arabic", "Geeza Pro", "Arial", sans-serif;
   font-weight: 500;
   letter-spacing: 0;
   line-height: 1.35;
@@ -673,7 +810,8 @@ footer .urdu,
 }
 
 .prayer-name > .urdu {
-  font-size: 0.95rem;
+  font-size: 0.85rem;
+  line-height: 1.6;
 }
 
 .notify-button .bilingual,
@@ -716,7 +854,10 @@ footer .urdu,
 }
 
 .utility-panel {
-  padding: 22px;
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  padding: 16px;
 }
 
 @media (display-mode: standalone), (display-mode: window-controls-overlay) {
@@ -726,19 +867,16 @@ footer .urdu,
 }
 
 .utility-copy {
-  align-items: flex-start;
   display: flex;
-  gap: 13px;
-}
-
-.utility-copy > svg {
-  color: var(--jade);
-  flex: 0 0 auto;
-  margin-top: 4px;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
 .utility-copy h2 {
-  font-size: 1.3rem;
+  font-size: 1rem;
+  font-weight: 700;
   margin: 0;
 }
 
@@ -748,9 +886,9 @@ footer .urdu,
 }
 
 .utility-copy p {
-  font-size: 0.84rem;
-  line-height: 1.55;
-  margin: 5px 0 0;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  margin: 0;
 }
 
 .secondary-button {
@@ -758,6 +896,21 @@ footer .urdu,
   color: var(--forest);
   margin-top: 18px;
   width: 100%;
+}
+
+.utility-panel .secondary-button {
+  background: transparent;
+  border: 1.5px solid var(--forest);
+  color: var(--forest);
+  flex: 0 0 auto;
+  margin: 0;
+  min-height: 44px;
+  padding: 0 18px;
+  width: auto;
+}
+
+.utility-panel .secondary-button .action-urdu {
+  opacity: 0.72;
 }
 
 .offline-note {
@@ -1241,46 +1394,41 @@ footer a {
   }
 
   .page-grid {
-    grid-template-columns: minmax(310px, 0.82fr) minmax(400px, 1.18fr);
+    align-items: center;
+    grid-template-columns: minmax(300px, 0.82fr) minmax(380px, 1.18fr);
   }
 
-  .next-prayer-panel {
-    grid-row: span 2;
-    min-height: 612px;
-    padding-top: 44px;
+  .next-prayer-wrap {
+    grid-column: 1;
+    grid-row: 1;
+    margin-inline: auto;
+    max-width: 440px;
+    width: 100%;
   }
 
-  .arch-line {
-    bottom: 106px;
-    top: 78px;
-    width: 290px;
-  }
-
-  .next-prayer-copy {
-    margin-top: 72px;
+  .utility-panel {
+    grid-column: 1;
+    grid-row: 2;
+    margin-inline: auto;
+    max-width: 440px;
+    width: 100%;
   }
 
   .schedule-panel {
-    padding: 28px 28px 18px;
+    align-self: center;
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    padding: 20px 20px 10px;
+  }
+
+  .next-prayer-copy {
+    padding: 48px 26px 26px;
   }
 }
 
 @media (max-width: 520px) {
-  .next-prayer-panel {
-    min-height: 0;
-    padding: 24px 18px 18px;
-  }
-
   .next-prayer-copy {
-    margin-top: 22px;
-  }
-
-  .next-prayer-copy h1 {
-    font-size: 3.1rem;
-  }
-
-  .arch-line {
-    width: min(210px, 68vw);
+    padding: 34px 18px 18px;
   }
 
   .admin-title {
