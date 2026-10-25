@@ -15,7 +15,7 @@ export function SignOutButton() {
     try {
       await createClient().auth.signOut();
       clearAllCachedBootstrap();
-      router.push("/");
+      router.replace("/");
       router.refresh();
     } catch {
       setBusy(false);

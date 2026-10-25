@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LogIn } from "lucide-react";
@@ -13,6 +13,26 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+
+  // The login route can be served from the client router cache after sign-in,
+  // so the server redirect may not run. Recover by checking the local session.
+  useEffect(() => {
+    if (
+      !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+      !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+    ) {
+      return;
+    }
+    let active = true;
+    void createClient()
+      .auth.getSession()
+      .then(({ data: { session } }) => {
+        if (active && session) router.replace("/admin");
+      });
+    return () => {
+      active = false;
+    };
+  }, [router]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -42,6 +62,7 @@ export function LoginForm() {
       // password setup when required, so we go straight there instead of
       // paying for a separate access-status round-trip before navigating.
       router.replace("/admin");
+      router.refresh();
     } catch (error) {
       setMessage(getSignInErrorMessage(error));
     } finally {

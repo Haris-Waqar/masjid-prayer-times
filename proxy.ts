@@ -5,6 +5,33 @@ import {
   serializeForwardedUser,
 } from "@/lib/admin-session-header";
 
+function isPublicAdminPath(pathname: string) {
+  return (
+    pathname === "/admin/login" ||
+    pathname.startsWith("/admin/login/") ||
+    pathname === "/admin/forgot-password" ||
+    pathname.startsWith("/admin/forgot-password/")
+  );
+}
+
+function isProtectedAdminPage(pathname: string) {
+  return pathname.startsWith("/admin") && !isPublicAdminPath(pathname);
+}
+
+function withRefreshedCookies(
+  response: NextResponse,
+  cookies: {
+    name: string;
+    value: string;
+    options?: Record<string, unknown>;
+  }[],
+) {
+  cookies.forEach(({ name, value, options }) =>
+    response.cookies.set(name, value, options),
+  );
+  return response;
+}
+
 export async function proxy(request: NextRequest) {
   // Build the request headers we forward downstream. Always strip any inbound
   // value of our trusted header so a client can never forge an admin identity —
@@ -40,6 +67,22 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Optimistic gate only: send signed-out visitors straight to login so they
+  // never paint the /admin client shell's loading state first. API routes still
+  // enforce auth themselves and must keep returning 401 JSON.
+  if (
+    isProtectedAdminPage(request.nextUrl.pathname) &&
+    !(user?.id && user.email)
+  ) {
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/admin/login";
+    loginUrl.search = "";
+    return withRefreshedCookies(
+      NextResponse.redirect(loginUrl),
+      refreshedCookies,
+    );
+  }
+
   if (user?.id && user.email) {
     requestHeaders.set(
       ADMIN_USER_HEADER,
@@ -51,11 +94,10 @@ export async function proxy(request: NextRequest) {
     );
   }
 
-  const response = NextResponse.next({ request: { headers: requestHeaders } });
-  refreshedCookies.forEach(({ name, value, options }) =>
-    response.cookies.set(name, value, options),
+  return withRefreshedCookies(
+    NextResponse.next({ request: { headers: requestHeaders } }),
+    refreshedCookies,
   );
-  return response;
 }
 
 export const config = {

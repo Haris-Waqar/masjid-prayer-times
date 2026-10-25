@@ -1,8 +1,18 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { LoginForm } from "@/app/admin/login/login-form";
 import { NavigationPendingIcon } from "@/app/navigation-pending-icon";
+import { getAdminSession } from "@/lib/admin";
 
-export default function AdminLoginPage() {
+export default async function AdminLoginPage() {
+  const { user, access } = await getAdminSession();
+  if (user) {
+    if (access?.passwordSetupRequired) {
+      redirect("/admin/reset-password?setup=required");
+    }
+    redirect("/admin");
+  }
+
   return (
     <main className="admin-shell">
       <div className="admin-topbar">
