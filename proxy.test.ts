@@ -30,11 +30,21 @@ function mockSession(user: {
     };
     return {
       auth: {
-        getUser: async () => {
+        getClaims: async () => {
           cookies?.setAll?.([
             { name: "sb-access-token", value: "refreshed", options: { path: "/" } },
           ]);
-          return { data: { user }, error: null };
+          if (!user?.id || !user.email) return { data: null, error: null };
+          return {
+            data: {
+              claims: {
+                sub: user.id,
+                email: user.email,
+                app_metadata: user.app_metadata,
+              },
+            },
+            error: null,
+          };
         },
       },
     } as never;
@@ -122,6 +132,26 @@ describe("proxy", () => {
         mustChangePassword: true,
       }),
     );
+  });
+
+  it("keeps serving when session verification throws", async () => {
+    vi.mocked(createServerClient).mockImplementation(() => {
+      return {
+        auth: {
+          getClaims: async () => {
+            throw new Error("auth unavailable");
+          },
+        },
+      } as never;
+    });
+
+    const page = await proxy(incoming("/admin"));
+    expect(page.status).toBe(307);
+    expect(page.headers.get("location")).toBe("http://localhost/admin/login");
+
+    const api = await proxy(incoming("/api/admin/schedule"));
+    expect(api.headers.get("location")).toBeNull();
+    expect(forwardedUser(api)).toBeNull();
   });
 
   it("does not treat an id without an email as signed in", async () => {

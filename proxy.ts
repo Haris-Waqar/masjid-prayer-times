@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import {
   ADMIN_USER_HEADER,
   serializeForwardedUser,
+  type ForwardedAdminUser,
 } from "@/lib/admin-session-header";
 
 function isPublicAdminPath(pathname: string) {
@@ -29,7 +30,30 @@ function withRefreshedCookies(
   cookies.forEach(({ name, value, options }) =>
     response.cookies.set(name, value, options),
   );
+  // A refreshed session is written with Set-Cookie. Keep that response out of
+  // any shared cache so one visitor cannot receive another's session.
+  if (cookies.length > 0) {
+    response.headers.set(
+      "Cache-Control",
+      "private, no-cache, no-store, must-revalidate",
+    );
+    response.headers.set("Expires", "0");
+    response.headers.set("Pragma", "no-cache");
+  }
   return response;
+}
+
+function sessionFromClaims(claims: {
+  sub?: string;
+  email?: string;
+  app_metadata?: Record<string, unknown>;
+} | null): ForwardedAdminUser | null {
+  if (!claims?.sub || !claims.email) return null;
+  return {
+    id: claims.sub,
+    email: claims.email,
+    mustChangePassword: claims.app_metadata?.must_change_password === true,
+  };
 }
 
 export async function proxy(request: NextRequest) {
@@ -63,17 +87,34 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims() verifies the JWT locally (this project signs with ES256).
+  // getUser() would call Auth on every page and API request. Sign-in loads
+  // /admin together with its API routes, and those parallel Auth calls were
+  // slow enough to leave the page on its skeleton — and a thrown Auth error
+  // took down the whole request.
+  let session: ForwardedAdminUser | null = null;
+  try {
+    const { data, error } = await supabase.auth.getClaims();
+    if (!error) {
+      const claims = data?.claims;
+      session = sessionFromClaims(
+        claims
+          ? {
+              sub: claims.sub,
+              email: claims.email,
+              app_metadata: claims.app_metadata,
+            }
+          : null,
+      );
+    }
+  } catch {
+    session = null;
+  }
 
   // Optimistic gate only: send signed-out visitors straight to login so they
   // never paint the /admin client shell's loading state first. API routes still
   // enforce auth themselves and must keep returning 401 JSON.
-  if (
-    isProtectedAdminPage(request.nextUrl.pathname) &&
-    !(user?.id && user.email)
-  ) {
+  if (isProtectedAdminPage(request.nextUrl.pathname) && !session) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/admin/login";
     loginUrl.search = "";
@@ -83,15 +124,8 @@ export async function proxy(request: NextRequest) {
     );
   }
 
-  if (user?.id && user.email) {
-    requestHeaders.set(
-      ADMIN_USER_HEADER,
-      serializeForwardedUser({
-        id: user.id,
-        email: user.email,
-        mustChangePassword: user.app_metadata?.must_change_password === true,
-      }),
-    );
+  if (session) {
+    requestHeaders.set(ADMIN_USER_HEADER, serializeForwardedUser(session));
   }
 
   return withRefreshedCookies(

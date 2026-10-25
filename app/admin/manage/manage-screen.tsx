@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   clearCachedBootstrap,
   getCachedBootstrap,
@@ -32,40 +31,44 @@ type AccessStatus = {
 type OverviewResponse = AdminOverview & { error?: string; ok?: boolean };
 
 export function ManageScreen() {
-  const router = useRouter();
   const [status, setStatus] = useState<Status>(
     () => getCachedBootstrap<ReadyStatus>(CACHE_KEY) ?? { state: "loading" },
   );
 
   useEffect(() => {
+    // Once per mount. See AdminScreen: depending on useRouter() restarts the
+    // load whenever the router cache changes.
+    const controller = new AbortController();
     let active = true;
 
     async function bootstrap() {
       try {
         const accessResponse = await fetch("/api/admin/access-status", {
           cache: "no-store",
+          signal: controller.signal,
         });
         if (!active) return;
 
         if (accessResponse.status === 401) {
           clearCachedBootstrap(CACHE_KEY);
-          router.replace("/admin/login");
+          window.location.replace("/admin/login");
           return;
         }
         const access = await readApiResponse<AccessStatus>(accessResponse);
         if (access.passwordSetupRequired) {
           clearCachedBootstrap(CACHE_KEY);
-          router.replace("/admin/reset-password?setup=required");
+          window.location.replace("/admin/reset-password?setup=required");
           return;
         }
         if (!access.ok || !access.canManage) {
           clearCachedBootstrap(CACHE_KEY);
-          router.replace("/admin");
+          window.location.replace("/admin");
           return;
         }
 
         const overviewResponse = await fetch("/api/admin/overview", {
           cache: "no-store",
+          signal: controller.signal,
         });
         if (!active) return;
         const overview =
@@ -87,24 +90,25 @@ export function ManageScreen() {
         setCachedBootstrap(CACHE_KEY, ready);
         setStatus(ready);
       } catch {
-        if (active)
-          setStatus((prev) =>
-            prev.state === "ready"
-              ? prev
-              : {
-                  state: "error",
-                  message:
-                    "The management overview could not be loaded. Try again.",
-                },
-          );
+        if (!active || controller.signal.aborted) return;
+        setStatus((prev) =>
+          prev.state === "ready"
+            ? prev
+            : {
+                state: "error",
+                message:
+                  "The management overview could not be loaded. Try again.",
+              },
+        );
       }
     }
 
     void bootstrap();
     return () => {
       active = false;
+      controller.abort();
     };
-  }, [router]);
+  }, []);
 
   return (
     <main className="admin-shell management-shell">

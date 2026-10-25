@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import { KeyRound } from "lucide-react";
 import { readApiResponse } from "@/lib/api-response";
 import { createClient } from "@/lib/supabase/client";
@@ -11,7 +10,6 @@ export function ResetPasswordForm({
 }: {
   requiresSetup: boolean;
 }) {
-  const router = useRouter();
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [busy, setBusy] = useState(false);
@@ -45,15 +43,13 @@ export function ResetPasswordForm({
         const { error } = await createClient().auth.updateUser({ password });
         if (error) throw error;
       }
-      router.replace("/admin");
-      router.refresh();
+      window.location.replace("/admin");
     } catch (error) {
       setMessage(
         error instanceof Error
           ? error.message
           : "The password could not be updated. Request a new reset link and try again.",
       );
-    } finally {
       setBusy(false);
     }
   }

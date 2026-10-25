@@ -2,20 +2,19 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { LogIn } from "lucide-react";
 import { getSignInErrorMessage } from "@/lib/auth-errors";
 import { createClient } from "@/lib/supabase/client";
 
 export function LoginForm() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
-  // The login route can be served from the client router cache after sign-in,
-  // so the server redirect may not run. Recover by checking the local session.
+  // The login route can be served from the client router cache, so the server
+  // redirect may not run. Confirm the session with Auth before leaving: a
+  // cookie-only check would send a rejected session straight back to /admin.
   useEffect(() => {
     if (
       !process.env.NEXT_PUBLIC_SUPABASE_URL ||
@@ -25,14 +24,15 @@ export function LoginForm() {
     }
     let active = true;
     void createClient()
-      .auth.getSession()
-      .then(({ data: { session } }) => {
-        if (active && session) router.replace("/admin");
-      });
+      .auth.getUser()
+      .then(({ data: { user } }) => {
+        if (active && user) window.location.replace("/admin");
+      })
+      .catch(() => undefined);
     return () => {
       active = false;
     };
-  }, [router]);
+  }, []);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -46,6 +46,7 @@ export function LoginForm() {
         setMessage(
           "Sign-in is not configured. Contact the site administrator.",
         );
+        setBusy(false);
         return;
       }
       const supabase = createClient();
@@ -55,17 +56,15 @@ export function LoginForm() {
       });
       if (error) {
         setMessage(getSignInErrorMessage(error));
+        setBusy(false);
         return;
       }
 
-      // The /admin page verifies authorization server-side and redirects to
-      // password setup when required, so we go straight there instead of
-      // paying for a separate access-status round-trip before navigating.
-      router.replace("/admin");
-      router.refresh();
+      // Full navigation so the new session cookie is sent once, and so this
+      // page's server redirect cannot race a client-side replace + refresh.
+      window.location.replace("/admin");
     } catch (error) {
       setMessage(getSignInErrorMessage(error));
-    } finally {
       setBusy(false);
     }
   }

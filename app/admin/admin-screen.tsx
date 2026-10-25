@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { LockKeyhole, Settings } from "lucide-react";
 import { AdminEditor } from "@/app/admin/admin-editor";
 import {
@@ -55,7 +54,6 @@ type ScheduleResponse = {
 };
 
 export function AdminScreen() {
-  const router = useRouter();
   // Seed from the session cache so a revisit renders the last data instantly;
   // the effect below still refreshes it in the background.
   const [status, setStatus] = useState<Status>(
@@ -63,20 +61,30 @@ export function AdminScreen() {
   );
 
   useEffect(() => {
+    // Once per mount. next/navigation's useRouter() is a new object whenever
+    // the router cache changes, and depending on it restarts this load during
+    // sign-in — the skeleton never settles, and the repeated Auth calls pile up.
+    const controller = new AbortController();
     let active = true;
 
     async function bootstrap() {
       try {
         const [accessResponse, scheduleResponse] = await Promise.all([
-          fetch("/api/admin/access-status", { cache: "no-store" }),
-          fetch("/api/admin/schedule", { cache: "no-store" }),
+          fetch("/api/admin/access-status", {
+            cache: "no-store",
+            signal: controller.signal,
+          }),
+          fetch("/api/admin/schedule", {
+            cache: "no-store",
+            signal: controller.signal,
+          }),
         ]);
 
         if (!active) return;
 
         if (accessResponse.status === 401) {
           clearCachedBootstrap(CACHE_KEY);
-          router.replace("/admin/login");
+          window.location.replace("/admin/login");
           return;
         }
 
@@ -88,7 +96,7 @@ export function AdminScreen() {
         }
         if (access.passwordSetupRequired) {
           clearCachedBootstrap(CACHE_KEY);
-          router.replace("/admin/reset-password?setup=required");
+          window.location.replace("/admin/reset-password?setup=required");
           return;
         }
         if (!access.canEdit) {
@@ -137,23 +145,24 @@ export function AdminScreen() {
         setCachedBootstrap(CACHE_KEY, ready);
         setStatus(ready);
       } catch {
-        if (active)
-          setStatus((prev) =>
-            prev.state === "ready"
-              ? prev
-              : {
-                  state: "error",
-                  message: "The timetable could not be loaded. Try again.",
-                },
-          );
+        if (!active || controller.signal.aborted) return;
+        setStatus((prev) =>
+          prev.state === "ready"
+            ? prev
+            : {
+                state: "error",
+                message: "The timetable could not be loaded. Try again.",
+              },
+        );
       }
     }
 
     void bootstrap();
     return () => {
       active = false;
+      controller.abort();
     };
-  }, [router]);
+  }, []);
 
   if (status.state === "denied") {
     return (

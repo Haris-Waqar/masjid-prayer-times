@@ -4,10 +4,8 @@ import { useState } from "react";
 import { LoaderCircle, LogOut } from "lucide-react";
 import { clearAllCachedBootstrap } from "@/app/admin/bootstrap-cache";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
 
 export function SignOutButton() {
-  const router = useRouter();
   const [busy, setBusy] = useState(false);
 
   async function signOut() {
@@ -16,8 +14,8 @@ export function SignOutButton() {
     try {
       await createClient().auth.signOut();
       clearAllCachedBootstrap();
-      router.replace("/");
-      router.refresh();
+      // Reload the public timetable so it is not the signed-in router cache.
+      window.location.replace("/");
     } catch {
       setBusy(false);
     }
