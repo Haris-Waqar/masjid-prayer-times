@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, BellOff, BellRing, Clock, RefreshCw } from "lucide-react";
+import { Bell, BellOff, BellRing, Clock, RefreshCw, Settings } from "lucide-react";
 import { NavigationPendingIcon } from "@/app/navigation-pending-icon";
 import type { MosqueSettings, PrayerTime } from "@/lib/prayers";
 import {
@@ -19,6 +19,7 @@ type Props = {
   date: string;
   times: PrayerTime[];
   schedulePublished: boolean;
+  canUpdateTimes: boolean;
 };
 
 type InstallPrompt = Event & {
@@ -65,6 +66,7 @@ export function PrayerDashboard({
   date,
   times,
   schedulePublished,
+  canUpdateTimes,
 }: Props) {
   const router = useRouter();
   const [now, setNow] = useState<Date | null>(null);
@@ -558,10 +560,12 @@ export function PrayerDashboard({
             ) : (
               <span className="unpublished-note">{publicCopy.unposted.en}</span>
             )}
-            <Link className="update-link" href="/admin">
-              <NavigationPendingIcon kind="admin" size={15} />
-              <span>Update times</span>
-            </Link>
+            {canUpdateTimes ? (
+              <Link className="update-link" href="/admin">
+                <NavigationPendingIcon kind="admin" size={15} />
+                <span>Update times</span>
+              </Link>
+            ) : null}
           </div>
         </section>
 
@@ -589,6 +593,12 @@ export function PrayerDashboard({
 
       <footer>
         <p>{publicCopy.footer.en}</p>
+        {!canUpdateTimes ? (
+          <Link className="admin-entry-link" href="/admin">
+            <Settings size={14} aria-hidden="true" />
+            Admin
+          </Link>
+        ) : null}
       </footer>
     </main>
   );

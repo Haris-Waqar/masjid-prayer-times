@@ -25,7 +25,11 @@ test("public timetable renders the mosque and five prayers", async ({
   ).toBeVisible();
   await expect(
     page.getByRole("link", { name: "Update times" }),
-  ).toHaveAttribute("href", "/admin");
+  ).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Admin" })).toHaveAttribute(
+    "href",
+    "/admin",
+  );
   await expect
     .poll(() =>
       page
@@ -35,26 +39,8 @@ test("public timetable renders the mosque and five prayers", async ({
     .toBe("none");
 });
 
-test("navigation keeps the current page visible while admin loads", async ({
-  page,
-}) => {
-  await page.goto("/");
-  await page.route(/\/admin(?:\?|$)/, async (route) => {
-    if (route.request().headers().rsc === "1") {
-      await new Promise((resolve) => setTimeout(resolve, 400));
-    }
-    await route.continue();
-  });
-
-  const adminLink = page.getByRole("link", { name: "Update times" });
-  await adminLink.click();
-
-  await expect(
-    page.getByRole("heading", { name: "Today's jamaat times" }),
-  ).toBeVisible();
-  await expect(
-    adminLink.locator('[data-navigation-pending="true"]'),
-  ).toBeVisible();
+test("admin route opens sign in without a loading shell", async ({ page }) => {
+  await page.goto("/admin");
   await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
   await expect(page.locator(".loading-shell")).toHaveCount(0);
 });

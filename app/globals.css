@@ -24,6 +24,8 @@
 html {
   background: var(--paper);
   color: var(--ink);
+  /* 16px near phone widths → ~18.5px on large desktops */
+  font-size: clamp(1rem, 0.9rem + 0.4vw, 1.15625rem);
   min-height: 100%;
 }
 
@@ -35,6 +37,8 @@ body {
     var(--paper);
   font-family:
     var(--font-dm-sans), "Avenir Next", Avenir, "Segoe UI", sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
 }
 
 button,
@@ -143,7 +147,7 @@ input:focus-visible {
 
 .brand-name {
   color: var(--forest);
-  font-size: 1.25rem;
+  font-size: clamp(1.25rem, 1.1rem + 0.55vw, 1.55rem);
   font-weight: 700;
   letter-spacing: -0.01em;
 }
@@ -152,7 +156,7 @@ input:focus-visible {
   align-items: center;
   color: var(--muted);
   display: flex;
-  font-size: 0.78rem;
+  font-size: clamp(0.78rem, 0.72rem + 0.25vw, 0.92rem);
   gap: 4px;
   margin-top: 2px;
 }
@@ -245,7 +249,7 @@ input:focus-visible {
 
 .next-kicker > span:first-child {
   color: var(--brass-soft);
-  font-size: 0.72rem;
+  font-size: clamp(0.72rem, 0.68rem + 0.2vw, 0.84rem);
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -255,7 +259,7 @@ input:focus-visible {
   color: var(--brass-soft);
   font-family:
     var(--font-noto-nastaliq), "Noto Naskh Arabic", "Geeza Pro", serif;
-  font-size: 0.82rem;
+  font-size: clamp(0.82rem, 0.76rem + 0.25vw, 0.98rem);
   line-height: 1.9;
 }
 
@@ -268,7 +272,7 @@ input:focus-visible {
 }
 
 .next-name > span:first-child {
-  font-size: 1.65rem;
+  font-size: clamp(1.65rem, 1.4rem + 0.8vw, 2.1rem);
   font-weight: 600;
   letter-spacing: -0.01em;
 }
@@ -283,12 +287,12 @@ input:focus-visible {
 .name-urdu {
   font-family:
     var(--font-noto-nastaliq), "Noto Naskh Arabic", "Geeza Pro", serif;
-  font-size: 1.35rem;
+  font-size: clamp(1.35rem, 1.2rem + 0.5vw, 1.65rem);
   line-height: 2.2;
 }
 
 .next-time {
-  font-size: clamp(3.4rem, 15vw, 3.9rem);
+  font-size: clamp(3.4rem, 2.4rem + 4.5vw, 4.75rem);
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   letter-spacing: -0.03em;
@@ -296,14 +300,14 @@ input:focus-visible {
 }
 
 .next-suffix {
-  font-size: 1.35rem;
+  font-size: clamp(1.35rem, 1.2rem + 0.45vw, 1.7rem);
   font-weight: 600;
   letter-spacing: 0;
   margin-left: 6px;
 }
 
 .awaiting-title {
-  font-size: clamp(1.9rem, 8vw, 2.4rem);
+  font-size: clamp(1.9rem, 1.5rem + 1.6vw, 2.75rem);
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.1;
@@ -331,7 +335,7 @@ input:focus-visible {
   border-radius: 999px;
   color: #1f1a0e;
   display: inline-flex;
-  font-size: 0.88rem;
+  font-size: clamp(0.88rem, 0.8rem + 0.25vw, 1.02rem);
   font-variant-numeric: tabular-nums;
   font-weight: 600;
   gap: 6px;
@@ -578,7 +582,7 @@ input:focus-visible {
 }
 
 .section-heading h2 {
-  font-size: 1.05rem;
+  font-size: clamp(1.05rem, 0.95rem + 0.4vw, 1.3rem);
   font-weight: 700;
   line-height: 1.3;
   margin: 0;
@@ -589,7 +593,7 @@ input:focus-visible {
   display: block;
   font-family:
     var(--font-noto-nastaliq), "Noto Naskh Arabic", "Geeza Pro", serif;
-  font-size: 0.78rem;
+  font-size: clamp(0.78rem, 0.72rem + 0.25vw, 0.95rem);
   font-weight: 500;
   letter-spacing: 0;
   line-height: 1.7;
@@ -680,7 +684,7 @@ input:focus-visible {
 
 .schedule-list li > time,
 .schedule-list li .unpublished-time {
-  font-size: 1rem;
+  font-size: clamp(1rem, 0.92rem + 0.3vw, 1.2rem);
   font-variant-numeric: tabular-nums;
   font-weight: 600;
   white-space: nowrap;
@@ -700,7 +704,7 @@ input:focus-visible {
 
 .schedule-foot .updated-note,
 .schedule-foot .unpublished-note {
-  font-size: 0.74rem;
+  font-size: clamp(0.74rem, 0.7rem + 0.2vw, 0.88rem);
   margin: 0;
   text-align: left;
 }
@@ -738,7 +742,7 @@ input:focus-visible {
 .prayer-name {
   align-items: center;
   display: flex;
-  font-size: 1rem;
+  font-size: clamp(1rem, 0.92rem + 0.3vw, 1.18rem);
   font-weight: 500;
   gap: 10px;
   min-width: 0;
@@ -885,7 +889,7 @@ footer .urdu,
 }
 
 .utility-copy h2 {
-  font-size: 1rem;
+  font-size: clamp(1rem, 0.92rem + 0.3vw, 1.18rem);
   font-weight: 700;
   margin: 0;
 }
@@ -896,7 +900,7 @@ footer .urdu,
 }
 
 .utility-copy p {
-  font-size: 0.82rem;
+  font-size: clamp(0.82rem, 0.76rem + 0.25vw, 0.95rem);
   line-height: 1.4;
   margin: 0;
 }
@@ -964,7 +968,7 @@ footer {
   align-items: center;
   color: var(--muted);
   display: flex;
-  font-size: 0.72rem;
+  font-size: clamp(0.72rem, 0.68rem + 0.2vw, 0.86rem);
   gap: 18px;
   justify-content: space-between;
   margin: 24px auto 0;
@@ -974,6 +978,24 @@ footer {
 footer a {
   color: var(--jade);
   font-weight: 700;
+}
+
+.admin-entry-link {
+  align-items: center;
+  color: var(--muted);
+  display: inline-flex;
+  font-size: clamp(0.72rem, 0.68rem + 0.2vw, 0.86rem);
+  font-weight: 600;
+  gap: 5px;
+  min-height: 44px;
+  padding: 0 4px;
+  text-decoration: none;
+}
+
+.admin-entry-link:hover {
+  color: var(--forest);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 /* Admin */
@@ -1664,8 +1686,14 @@ footer a {
     padding: 30px 0;
   }
 
+  .brand-mark {
+    height: 52px;
+    width: 52px;
+  }
+
   .page-grid {
     align-items: center;
+    gap: 22px;
     grid-template-columns: minmax(300px, 0.82fr) minmax(380px, 1.18fr);
   }
 
@@ -1689,7 +1717,16 @@ footer a {
     align-self: center;
     grid-column: 2;
     grid-row: 1 / span 2;
-    padding: 20px 20px 10px;
+    padding: 22px 22px 12px;
+  }
+
+  .schedule-list {
+    margin-top: 12px;
+  }
+
+  .schedule-list li {
+    min-height: 58px;
+    padding: 0 12px;
   }
 
   .next-prayer-copy {
@@ -1702,6 +1739,37 @@ footer a {
 
   .admin-create-controls {
     grid-template-columns: minmax(0, 1fr) auto;
+  }
+}
+
+@media (min-width: 1024px) {
+  .app-shell {
+    padding: 0 44px 44px;
+  }
+
+  .site-header {
+    padding: 34px 0;
+  }
+
+  .page-grid {
+    gap: 28px;
+  }
+
+  .schedule-list li {
+    min-height: 62px;
+  }
+}
+
+@media (min-width: 1440px) {
+  .app-shell {
+    padding: 0 48px 48px;
+  }
+
+  .site-header,
+  .page-grid,
+  footer,
+  .alert-banner {
+    max-width: 1240px;
   }
 }
 
@@ -1748,13 +1816,17 @@ footer a {
   }
 
   .admin-topbar {
-    align-items: flex-start;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 12px;
   }
 
   .admin-topbar-actions {
-    align-items: flex-end;
-    flex-direction: column;
-    gap: 2px;
+    align-items: center;
+    flex-direction: row;
+    flex-shrink: 0;
+    gap: 14px;
+    margin-left: auto;
   }
 
   .management-heading {
