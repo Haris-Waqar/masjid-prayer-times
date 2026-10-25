@@ -25,7 +25,34 @@ describe("GET /api/admin/access-status", () => {
     expect(response.headers.get("cache-control")).toBe("no-store");
     await expect(response.json()).resolves.toEqual({
       ok: true,
+      email: "admin@example.org",
+      role: "admin",
+      canEdit: false,
+      canManage: false,
       passwordSetupRequired: true,
+    });
+  });
+
+  it("reports capabilities for an active super administrator", async () => {
+    vi.mocked(getAdminSession).mockResolvedValue({
+      user: { id: "user-2" },
+      access: {
+        userId: "user-2",
+        membershipId: "member-2",
+        email: "boss@example.org",
+        role: "super_admin",
+        passwordSetupRequired: false,
+      },
+    } as never);
+    const response = await GET(request);
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      ok: true,
+      email: "boss@example.org",
+      role: "super_admin",
+      canEdit: true,
+      canManage: true,
+      passwordSetupRequired: false,
     });
   });
 

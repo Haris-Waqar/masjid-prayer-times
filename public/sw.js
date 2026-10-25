@@ -1,5 +1,22 @@
-const CACHE_NAME = "masjid-times-v3";
+const CACHE_NAME = "masjid-times-v4";
 const APP_SHELL = ["/", "/manifest.webmanifest", "/favicon.svg"];
+const NAVIGATION_TIMEOUT_MS = 3000;
+
+function fetchWithTimeout(request, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("timeout")), timeoutMs);
+    fetch(request).then(
+      (response) => {
+        clearTimeout(timer);
+        resolve(response);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
 
 async function broadcastTimetableUpdate() {
   const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
@@ -38,7 +55,7 @@ self.addEventListener("fetch", (event) => {
 
   if (event.request.mode === "navigate" && url.pathname === "/") {
     event.respondWith(
-      fetch(event.request)
+      fetchWithTimeout(event.request, NAVIGATION_TIMEOUT_MS)
         .then((response) => {
           if (response.ok) {
             const copy = response.clone();

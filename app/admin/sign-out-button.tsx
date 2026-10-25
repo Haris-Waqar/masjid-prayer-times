@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { clearAllCachedBootstrap } from "@/app/admin/bootstrap-cache";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
@@ -13,6 +14,7 @@ export function SignOutButton() {
     setBusy(true);
     try {
       await createClient().auth.signOut();
+      clearAllCachedBootstrap();
       router.push("/");
       router.refresh();
     } catch {

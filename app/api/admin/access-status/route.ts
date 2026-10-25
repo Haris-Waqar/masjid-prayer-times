@@ -1,5 +1,6 @@
 import { getAdminSession } from "@/lib/admin";
 import { logAdminFailure, noStoreJson } from "@/lib/admin-api";
+import { canEditSchedule, canManageAdmins } from "@/lib/admin-policy";
 
 export async function GET(request: Request) {
   try {
@@ -17,6 +18,10 @@ export async function GET(request: Request) {
     }
     return noStoreJson({
       ok: true,
+      email: access.email,
+      role: access.role,
+      canEdit: canEditSchedule(access),
+      canManage: canManageAdmins(access),
       passwordSetupRequired: access.passwordSetupRequired,
     });
   } catch (error) {

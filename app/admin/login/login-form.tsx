@@ -4,7 +4,6 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LogIn } from "lucide-react";
-import { readApiResponse } from "@/lib/api-response";
 import { getSignInErrorMessage } from "@/lib/auth-errors";
 import { createClient } from "@/lib/supabase/client";
 
@@ -39,27 +38,10 @@ export function LoginForm() {
         return;
       }
 
-      const accessResponse = await fetch("/api/admin/access-status", {
-        cache: "no-store",
-      });
-      const access = await readApiResponse<{
-        error?: string;
-        passwordSetupRequired?: boolean;
-      }>(accessResponse);
-      if (!accessResponse.ok) {
-        await supabase.auth.signOut({ scope: "local" });
-        setMessage(
-          access.error ??
-            "Administrator access could not be verified. Please try again.",
-        );
-        return;
-      }
-      router.replace(
-        access.passwordSetupRequired
-          ? "/admin/reset-password?setup=required"
-          : "/admin",
-      );
-      router.refresh();
+      // The /admin page verifies authorization server-side and redirects to
+      // password setup when required, so we go straight there instead of
+      // paying for a separate access-status round-trip before navigating.
+      router.replace("/admin");
     } catch (error) {
       setMessage(getSignInErrorMessage(error));
     } finally {

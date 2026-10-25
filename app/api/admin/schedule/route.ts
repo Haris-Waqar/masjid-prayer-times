@@ -43,11 +43,18 @@ async function loadSchedule(request: Request) {
       { status: 403 },
     );
 
-  const date = new URL(request.url).searchParams.get("date") ?? undefined;
+  // No `date` param means "today" in the masjid timezone, so the editor can
+  // bootstrap its initial state with a single client fetch and without having
+  // to know the timezone itself.
+  let date = new URL(request.url).searchParams.get("date") ?? undefined;
+  if (!date) {
+    const settings = await getSettings();
+    date = dateInTimezone(settings.timezone);
+  }
   const dateError = await validateEffectiveDate(date);
   if (dateError) return Response.json({ error: dateError }, { status: 400 });
 
-  const schedule = await getPrayerSchedule(date!);
+  const schedule = await getPrayerSchedule(date);
   return Response.json({ date, times: schedule.times });
 }
 
