@@ -38,6 +38,7 @@ yarn-error.log*
 /.vercel/
 /.wrangler/
 /.sites-runtime/
+/supabase/.temp/
 
 # Workspace scaffolding and publication archives
 /.agents/

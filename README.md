@@ -4,6 +4,8 @@ A mobile-first Next.js PWA for one mosque. Visitors can see jamaat times without
 an account and opt in to Web Push alerts. Only authorized editors
 can sign in and publish timetable changes.
 
+Engineering conventions are indexed in the [engineering handbook](docs/README.md).
+
 ## Stack
 
 - Next.js App Router and TypeScript
@@ -17,11 +19,12 @@ can sign in and publish timetable changes.
 2. In the Supabase SQL Editor, run every file in `supabase/migrations/` in
    filename order. Later migrations tighten database permissions and must not be
    skipped.
-3. Create each editor in Supabase Authentication with an individual password,
-   then add their lowercase email:
+3. Create the initial administrator in Supabase Authentication with an individual
+   password, then add their Auth user ID and lowercase email:
 
    ```sql
-   insert into public.admin_members (email) values ('imam@example.org');
+   insert into public.admin_members (user_id, email, role)
+   values ('auth-user-uuid', 'imam@example.org', 'super_admin');
    ```
 
 4. Copy `.env.example` to `.env.local` and add the Supabase URL, publishable key,

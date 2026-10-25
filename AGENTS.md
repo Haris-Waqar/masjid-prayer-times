@@ -24,6 +24,8 @@ server-side authorization through the Supabase `admin_members` table.
 - Maintain keyboard focus states, reduced-motion support and high contrast.
 
 Read `SPEC.md` before changing product behavior.
+Follow the repository [engineering handbook](docs/README.md) for coding,
+structure, interface, error-handling, and API conventions.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

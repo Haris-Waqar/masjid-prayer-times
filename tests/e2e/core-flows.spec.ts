@@ -1,22 +1,31 @@
 import { expect, test } from "@playwright/test";
 
-test("public timetable renders the mosque and five prayers", async ({ page }) => {
+test("public timetable renders the mosque and five prayers", async ({
+  page,
+}) => {
   await page.goto("/");
 
-  await expect(page.getByText("Jamia Masjid Fazaia Housing", { exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Today's jamaat times" })).toBeVisible();
+  await expect(
+    page.getByText("Jamia Masjid Fazaia Housing", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Today's jamaat times" }),
+  ).toBeVisible();
+  const timetable = page.getByRole("list");
   for (const prayer of ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"]) {
-    await expect(page.getByText(prayer, { exact: true })).toBeVisible();
+    await expect(timetable.getByText(prayer, { exact: true })).toBeVisible();
   }
   await expect(page.getByText("Begins", { exact: true })).toHaveCount(0);
-  const timetable = page.getByRole("list");
   await expect(timetable.getByRole("time")).toHaveCount(5);
-  await expect(timetable.getByRole("time").first()).toHaveText(/^\d{1,2}:\d{2} [AP]M$/);
-  await expect(page.getByRole("button", { name: "Refresh times" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Open admin area" })).toHaveAttribute(
-    "href",
-    "/admin",
+  await expect(timetable.getByRole("time").first()).toHaveText(
+    /^\d{1,2}:\d{2} [AP]M$/,
   );
+  await expect(
+    page.getByRole("button", { name: "Refresh times" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Update times" }),
+  ).toHaveAttribute("href", "/admin");
   await expect
     .poll(() =>
       page
@@ -26,7 +35,9 @@ test("public timetable renders the mosque and five prayers", async ({ page }) =>
     .toBe("none");
 });
 
-test("navigation keeps the current page visible while admin loads", async ({ page }) => {
+test("navigation keeps the current page visible while admin loads", async ({
+  page,
+}) => {
   await page.goto("/");
   await page.route(/\/admin(?:\?|$)/, async (route) => {
     if (route.request().headers().rsc === "1") {
@@ -35,16 +46,22 @@ test("navigation keeps the current page visible while admin loads", async ({ pag
     await route.continue();
   });
 
-  const adminLink = page.getByRole("link", { name: "Open admin area" });
+  const adminLink = page.getByRole("link", { name: "Update times" });
   await adminLink.click();
 
-  await expect(page.getByRole("heading", { name: "Today's jamaat times" })).toBeVisible();
-  await expect(adminLink.locator('[data-navigation-pending="true"]')).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Today's jamaat times" }),
+  ).toBeVisible();
+  await expect(
+    adminLink.locator('[data-navigation-pending="true"]'),
+  ).toBeVisible();
   await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
   await expect(page.locator(".loading-shell")).toHaveCount(0);
 });
 
-test("an existing push subscription remains enabled after reopening", async ({ page }) => {
+test("an existing push subscription remains enabled after reopening", async ({
+  page,
+}) => {
   await page.addInitScript(() => {
     const registration = {
       pushManager: {
@@ -75,8 +92,12 @@ test("an existing push subscription remains enabled after reopening", async ({ p
 
   await page.goto("/");
 
-  await expect(page.getByRole("button", { name: "Notify me if jamaat changes" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Disable alerts" })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Notify me if jamaat changes" }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Disable alerts" }),
+  ).toBeVisible();
 });
 
 test("manual refresh shows progress and confirmation", async ({ page }) => {
@@ -88,7 +109,9 @@ test("manual refresh shows progress and confirmation", async ({ page }) => {
 
   await page.getByRole("button", { name: "Refresh times" }).click();
 
-  await expect(page.getByRole("button", { name: "Refreshing times" })).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Refreshing times" }),
+  ).toBeDisabled();
   await expect(page.getByText("Refreshing times…")).toBeVisible();
   await expect(page.getByText("Jamaat times refreshed.")).toBeVisible();
 });
@@ -113,8 +136,12 @@ test("a push update refreshes the visible timetable", async ({ page }) => {
       configurable: true,
       value: {
         register: async () => registration,
-        addEventListener: (type: string, listener: typeof runtimeWindow.receiveTimetableMessage) => {
-          if (type === "message") runtimeWindow.receiveTimetableMessage = listener;
+        addEventListener: (
+          type: string,
+          listener: typeof runtimeWindow.receiveTimetableMessage,
+        ) => {
+          if (type === "message")
+            runtimeWindow.receiveTimetableMessage = listener;
         },
         removeEventListener: () => undefined,
       },
@@ -129,7 +156,9 @@ test("a push update refreshes the visible timetable", async ({ page }) => {
     const runtimeWindow = window as typeof window & {
       receiveTimetableMessage?: (event: { data: { type: string } }) => void;
     };
-    runtimeWindow.receiveTimetableMessage?.({ data: { type: "TIMETABLE_UPDATED" } });
+    runtimeWindow.receiveTimetableMessage?.({
+      data: { type: "TIMETABLE_UPDATED" },
+    });
   });
 
   await refreshRequest;
@@ -145,49 +174,93 @@ test("admin without a session is redirected to sign in", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
   await expect(page.getByLabel("Password", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Forgot password?" })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Forgot password?" }),
+  ).toBeVisible();
   await expect(page.getByText(/secure sign-in link/i)).toHaveCount(0);
 });
 
-test("password sign-in sends credentials to Supabase without requesting email", async ({ page }) => {
+test("password sign-in sends credentials to Supabase without requesting email", async ({
+  page,
+}) => {
   let requestBody: { email?: string; password?: string } | undefined;
   await page.route("**/auth/v1/token?grant_type=password", async (route) => {
     requestBody = route.request().postDataJSON() as typeof requestBody;
     await route.fulfill({
       status: 400,
       contentType: "application/json",
-      body: JSON.stringify({ error: "invalid_grant", error_description: "Invalid login credentials" }),
+      body: JSON.stringify({
+        error: "invalid_grant",
+        error_description: "Invalid login credentials",
+      }),
     });
   });
   await page.goto("/admin/login");
 
   await page.getByLabel("Authorized email").fill("imam@example.org");
-  await page.getByLabel("Password", { exact: true }).fill("not-the-real-password");
+  await page
+    .getByLabel("Password", { exact: true })
+    .fill("not-the-real-password");
   await page.getByRole("button", { name: "Sign in" }).click();
 
-  await expect(page.getByText("The email or password is incorrect.")).toBeVisible();
+  await expect(
+    page.getByText("The email or password is incorrect."),
+  ).toBeVisible();
   expect(requestBody).toMatchObject({
     email: "imam@example.org",
     password: "not-the-real-password",
   });
 });
 
+test("password sign-in explains rate limiting", async ({ page }) => {
+  await page.route("**/auth/v1/token?grant_type=password", async (route) => {
+    await route.fulfill({
+      status: 429,
+      contentType: "application/json",
+      body: JSON.stringify({
+        code: "over_request_rate_limit",
+        message: "Request rate limit reached",
+      }),
+    });
+  });
+  await page.goto("/admin/login");
+
+  await page.getByLabel("Authorized email").fill("imam@example.org");
+  await page
+    .getByLabel("Password", { exact: true })
+    .fill("not-the-real-password");
+  await page.getByRole("button", { name: "Sign in" }).click();
+
+  await expect(
+    page.getByText(
+      "Too many sign-in attempts. Wait a few minutes before trying again.",
+    ),
+  ).toBeVisible();
+});
+
 test("password recovery uses the dedicated reset flow", async ({ page }) => {
   let redirectTo = "";
   await page.route("**/auth/v1/recover**", async (route) => {
-    redirectTo = new URL(route.request().url()).searchParams.get("redirect_to") ?? "";
-    await route.fulfill({ status: 200, contentType: "application/json", body: "{}" });
+    redirectTo =
+      new URL(route.request().url()).searchParams.get("redirect_to") ?? "";
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: "{}",
+    });
   });
   await page.goto("/admin/forgot-password");
 
   await page.getByLabel("Authorized email").fill("imam@example.org");
   await page.getByRole("button", { name: "Send reset link" }).click();
 
-  await expect(page.getByText(/if this address has an editor account/i)).toBeVisible();
+  await expect(page.getByText(/if this address is authorized/i)).toBeVisible();
   expect(redirectTo).toContain("/auth/callback?next=/admin/reset-password");
 });
 
-test("schedule API rejects an unauthenticated write with JSON", async ({ request }) => {
+test("schedule API rejects an unauthenticated write with JSON", async ({
+  request,
+}) => {
   const response = await request.post("/api/admin/schedule", {
     data: {
       date: "2026-10-24",
@@ -201,8 +274,8 @@ test("schedule API rejects an unauthenticated write with JSON", async ({ request
     },
   });
 
-  expect(response.status()).toBe(403);
+  expect(response.status()).toBe(401);
   await expect(response.json()).resolves.toEqual({
-    error: "Authorized editor access is required.",
+    error: "Sign in is required.",
   });
 });

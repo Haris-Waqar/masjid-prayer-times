@@ -3,9 +3,14 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { KeyRound } from "lucide-react";
+import { readApiResponse } from "@/lib/api-response";
 import { createClient } from "@/lib/supabase/client";
 
-export function ResetPasswordForm() {
+export function ResetPasswordForm({
+  requiresSetup,
+}: {
+  requiresSetup: boolean;
+}) {
   const router = useRouter();
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
@@ -26,12 +31,28 @@ export function ResetPasswordForm() {
 
     setBusy(true);
     try {
-      const { error } = await createClient().auth.updateUser({ password });
-      if (error) throw error;
+      if (requiresSetup) {
+        const response = await fetch("/api/admin/complete-setup", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ password }),
+        });
+        const result = await readApiResponse<{ error?: string }>(response);
+        if (!response.ok)
+          throw new Error(result.error ?? "The password could not be updated.");
+        await createClient().auth.refreshSession();
+      } else {
+        const { error } = await createClient().auth.updateUser({ password });
+        if (error) throw error;
+      }
       router.replace("/admin");
       router.refresh();
-    } catch {
-      setMessage("The password could not be updated. Request a new reset link and try again.");
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "The password could not be updated. Request a new reset link and try again.",
+      );
     } finally {
       setBusy(false);
     }
@@ -62,7 +83,11 @@ export function ResetPasswordForm() {
       <button className="primary-button" disabled={busy} type="submit">
         <KeyRound size={18} /> {busy ? "Updating…" : "Update password"}
       </button>
-      {message && <p className="form-message error">{message}</p>}
+      {message && (
+        <p className="form-message error" role="alert">
+          {message}
+        </p>
+      )}
     </form>
   );
 }

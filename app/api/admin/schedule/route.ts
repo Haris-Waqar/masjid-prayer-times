@@ -1,5 +1,6 @@
 import { revalidatePath, revalidateTag } from "next/cache";
-import { getAuthorizedAdmin } from "@/lib/admin";
+import { getAdminSession } from "@/lib/admin";
+import { canEditSchedule } from "@/lib/admin-policy";
 import { PRAYER_SCHEDULE_CACHE_TAG } from "@/lib/cache-tags";
 import {
   PRAYERS,
@@ -33,10 +34,14 @@ async function validateEffectiveDate(date: string | undefined) {
 }
 
 async function loadSchedule(request: Request) {
-  const user = await getAuthorizedAdmin();
-  if (!user?.email) {
-    return Response.json({ error: "Authorized access is required." }, { status: 403 });
-  }
+  const { access, user } = await getAdminSession();
+  if (!user)
+    return Response.json({ error: "Sign in is required." }, { status: 401 });
+  if (!canEditSchedule(access))
+    return Response.json(
+      { error: "Authorized access is required." },
+      { status: 403 },
+    );
 
   const date = new URL(request.url).searchParams.get("date") ?? undefined;
   const dateError = await validateEffectiveDate(date);
@@ -47,28 +52,34 @@ async function loadSchedule(request: Request) {
 }
 
 async function publishSchedule(request: Request) {
-  const user = await getAuthorizedAdmin();
-  if (!user?.email) {
-    return Response.json({ error: "Authorized access is required." }, { status: 403 });
-  }
+  const { access, user } = await getAdminSession();
+  if (!user)
+    return Response.json({ error: "Sign in is required." }, { status: 401 });
+  if (!canEditSchedule(access) || !access)
+    return Response.json(
+      { error: "Authorized access is required." },
+      { status: 403 },
+    );
 
   const input = (await request.json()) as ScheduleInput;
   const dateError = await validateEffectiveDate(input.date);
   if (dateError) return Response.json({ error: dateError }, { status: 400 });
   const effectiveDate = input.date!;
   if (!Array.isArray(input.times) || input.times.length !== PRAYERS.length) {
-    return Response.json({ error: "All five jamaat times are required." }, { status: 400 });
+    return Response.json(
+      { error: "All five jamaat times are required." },
+      { status: 400 },
+    );
   }
 
   const normalized: PrayerTime[] = [];
   for (const item of input.times) {
     const jamaat = item.jamaat ? normalizeTime(item.jamaat) : null;
-    if (
-      !item.prayer ||
-      !isPrayerName(item.prayer) ||
-      !jamaat
-    ) {
-      return Response.json({ error: "One or more jamaat times are invalid." }, { status: 400 });
+    if (!item.prayer || !isPrayerName(item.prayer) || !jamaat) {
+      return Response.json(
+        { error: "One or more jamaat times are invalid." },
+        { status: 400 },
+      );
     }
     normalized.push({
       prayer: item.prayer,
@@ -76,7 +87,10 @@ async function publishSchedule(request: Request) {
     });
   }
   if (new Set(normalized.map((item) => item.prayer)).size !== PRAYERS.length) {
-    return Response.json({ error: "Each prayer must appear exactly once." }, { status: 400 });
+    return Response.json(
+      { error: "Each prayer must appear exactly once." },
+      { status: 400 },
+    );
   }
 
   const supabase = createAdminClient();
@@ -86,14 +100,23 @@ async function publishSchedule(request: Request) {
       prayer: item.prayer,
       jamaat: item.jamaat,
     })),
-    p_changed_by: user.email,
+    p_changed_by: access.email,
   });
   if (error || !Array.isArray(data)) {
-    return Response.json({ error: "Could not post the jamaat times." }, { status: 500 });
+    return Response.json(
+      { error: "Could not post the jamaat times." },
+      { status: 500 },
+    );
   }
 
   const changes = data.filter(
-    (item): item is { prayer: PrayerTime["prayer"]; oldJamaat: string; newJamaat: string } =>
+    (
+      item,
+    ): item is {
+      prayer: PrayerTime["prayer"];
+      oldJamaat: string;
+      newJamaat: string;
+    } =>
       typeof item === "object" &&
       item !== null &&
       isPrayerName(item.prayer) &&
@@ -125,7 +148,10 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof SupabaseAdminConfigurationError) {
       return Response.json(
-        { error: "Server setup is incomplete. Add the Supabase secret key and restart the app." },
+        {
+          error:
+            "Server setup is incomplete. Add the Supabase secret key and restart the app.",
+        },
         { status: 503 },
       );
     }

@@ -4,6 +4,8 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LogIn } from "lucide-react";
+import { readApiResponse } from "@/lib/api-response";
+import { getSignInErrorMessage } from "@/lib/auth-errors";
 import { createClient } from "@/lib/supabase/client";
 
 export function LoginForm() {
@@ -22,17 +24,44 @@ export function LoginForm() {
         !process.env.NEXT_PUBLIC_SUPABASE_URL ||
         !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
       ) {
-        throw new Error("Supabase setup is not complete yet.");
+        setMessage(
+          "Sign-in is not configured. Contact the site administrator.",
+        );
+        return;
       }
-      const { error } = await createClient().auth.signInWithPassword({
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-      if (error) throw new Error("The email or password is incorrect.");
-      router.replace("/admin");
+      if (error) {
+        setMessage(getSignInErrorMessage(error));
+        return;
+      }
+
+      const accessResponse = await fetch("/api/admin/access-status", {
+        cache: "no-store",
+      });
+      const access = await readApiResponse<{
+        error?: string;
+        passwordSetupRequired?: boolean;
+      }>(accessResponse);
+      if (!accessResponse.ok) {
+        await supabase.auth.signOut({ scope: "local" });
+        setMessage(
+          access.error ??
+            "Administrator access could not be verified. Please try again.",
+        );
+        return;
+      }
+      router.replace(
+        access.passwordSetupRequired
+          ? "/admin/reset-password?setup=required"
+          : "/admin",
+      );
       router.refresh();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Sign-in failed.");
+      setMessage(getSignInErrorMessage(error));
     } finally {
       setBusy(false);
     }
@@ -66,7 +95,11 @@ export function LoginForm() {
       <Link className="form-link" href="/admin/forgot-password">
         Forgot password?
       </Link>
-      {message && <p className="form-message error">{message}</p>}
+      {message && (
+        <p className="form-message error" role="alert">
+          {message}
+        </p>
+      )}
     </form>
   );
 }

@@ -15,12 +15,23 @@ time. The public experience must be immediate and require no account.
 
 ## Administration
 
-- Use Supabase passwordless sign-in and the `admin_members` allowlist.
+- Use Supabase password sign-in and database-backed `admin` and `super_admin` roles.
 - Reject every unauthorized write on the server.
 - Let an editor choose an effective date and update all five prayer rows.
 - Require an explicit confirmation before publishing.
 - Notify subscribers only when at least one jamaat time changed.
 - Record the prayer, old time, new time, editor and timestamp.
+- Allow both administrator roles to edit jamaat times.
+- Allow only the sole super administrator to view operational statistics and create
+  or permanently delete regular administrators.
+- Let the super administrator revoke and later reactivate a regular administrator
+  without deleting their Auth account or timetable history.
+- Create new administrators with a one-time generated temporary password and
+  force them to replace it before timetable or management access is granted.
+- Never allow the interface or API to create another super administrator.
+- Report subscribed-device totals, English/Urdu split, registrations and refreshes
+  in the last 30 days, active administrators, recent timetable changes, and the
+  latest timetable change without exposing subscription secrets.
 
 ## Data rules
 
@@ -34,6 +45,8 @@ time. The public experience must be immediate and require no account.
 
 - Anonymous timetable reading works on the public web app.
 - Unauthorized users cannot open the editor or call the update endpoint.
+- Regular administrators cannot open or call super-administrator management features.
+- Temporary-password users cannot use administrator features until setup is complete.
 - A published change survives across browsers and devices.
 - Duplicate submissions do not duplicate the date/prayer row.
 - Notifications identify the prayer, old time, new time and effective date.

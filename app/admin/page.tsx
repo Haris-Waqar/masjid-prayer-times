@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { LockKeyhole } from "lucide-react";
+import { LockKeyhole, Settings } from "lucide-react";
 import { AdminEditor } from "@/app/admin/admin-editor";
 import { SignOutButton } from "@/app/admin/sign-out-button";
 import { NavigationPendingIcon } from "@/app/navigation-pending-icon";
+import { getAdminSession } from "@/lib/admin";
 import { dateInTimezone } from "@/lib/prayers";
 import { getPrayerTimes, getSettings } from "@/lib/schedule";
-import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -18,20 +18,12 @@ export default async function AdminPage() {
     redirect("/admin/login?setup=required");
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { access, user } = await getAdminSession();
   if (!user) redirect("/admin/login");
+  if (access?.passwordSetupRequired)
+    redirect("/admin/reset-password?setup=required");
 
-  const { data: admin } = await supabase
-    .from("admin_members")
-    .select("id")
-    .eq("email", user.email?.toLowerCase() ?? "")
-    .eq("active", true)
-    .maybeSingle();
-
-  if (!admin) {
+  if (!access) {
     return (
       <main className="admin-shell">
         <div className="admin-topbar">
@@ -44,8 +36,7 @@ export default async function AdminPage() {
           <LockKeyhole size={28} aria-hidden="true" />
           <h1 className="admin-title">Access is restricted</h1>
           <p className="admin-lede">
-            You signed in as <strong>{user.email}</strong>, but this address is not
-            on the masjid administrator list.
+            This signed-in account is not on the active administrator list.
           </p>
         </section>
       </main>
@@ -62,14 +53,25 @@ export default async function AdminPage() {
         <Link className="back-link" href="/">
           <NavigationPendingIcon kind="back" size={17} /> Back to jamaat times
         </Link>
-        <SignOutButton />
+        <div className="admin-topbar-actions">
+          {access.role === "super_admin" ? (
+            <Link className="back-link" href="/admin/manage">
+              <Settings size={17} aria-hidden="true" /> Manage
+            </Link>
+          ) : null}
+          <SignOutButton />
+        </div>
       </div>
       <h1 className="admin-title">Update jamaat times</h1>
       <p className="admin-lede">
         Review every time before posting. People are notified only when a jamaat
         time actually changes.
       </p>
-      <AdminEditor initialDate={date} initialTimes={times} editorEmail={user.email!} />
+      <AdminEditor
+        initialDate={date}
+        initialTimes={times}
+        editorEmail={access.email}
+      />
     </main>
   );
 }
