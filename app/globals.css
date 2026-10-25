@@ -1046,13 +1046,24 @@ footer a {
 .admin-topbar {
   align-items: center;
   display: flex;
+  flex-wrap: nowrap;
+  gap: 12px;
   justify-content: space-between;
   margin-bottom: 28px;
+}
+
+.admin-topbar > .back-link {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .admin-topbar-actions {
   align-items: center;
   display: flex;
+  flex-shrink: 0;
+  flex-wrap: nowrap;
   gap: 18px;
 }
 
@@ -1085,18 +1096,23 @@ footer a {
 }
 
 .sign-out-button {
+  align-items: center;
   appearance: none;
   background: transparent;
   border: 0;
   color: inherit;
   cursor: pointer;
+  display: inline-flex;
+  flex-shrink: 0;
   font: inherit;
   font-size: 0.85rem;
   font-weight: 700;
+  gap: 6px;
   padding: 0;
   text-decoration: none;
   text-underline-offset: 3px;
   transition: color 150ms ease;
+  white-space: nowrap;
 }
 
 .sign-out-button:hover:not(:disabled) {
@@ -1862,18 +1878,8 @@ footer a {
     grid-row: 1;
   }
 
-  .admin-topbar {
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px 12px;
-  }
-
   .admin-topbar-actions {
-    align-items: center;
-    flex-direction: row;
-    flex-shrink: 0;
     gap: 14px;
-    margin-left: auto;
   }
 
   .management-heading {

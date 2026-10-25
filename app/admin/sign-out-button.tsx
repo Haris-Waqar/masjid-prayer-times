@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { LoaderCircle, LogOut } from "lucide-react";
 import { clearAllCachedBootstrap } from "@/app/admin/bootstrap-cache";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
@@ -28,8 +29,14 @@ export function SignOutButton() {
       type="button"
       onClick={signOut}
       disabled={busy}
+      aria-busy={busy}
     >
-      {busy ? "Signing out…" : "Sign out"}
+      {busy ? (
+        <LoaderCircle className="is-spinning" size={17} aria-hidden="true" />
+      ) : (
+        <LogOut size={17} aria-hidden="true" />
+      )}
+      Sign out
     </button>
   );
 }
