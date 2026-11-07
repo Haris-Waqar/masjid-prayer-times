@@ -9,6 +9,7 @@ import { DefaultMosqueButton } from "@/app/components/default-mosque-controls";
 import { NavigationPendingIcon } from "@/app/navigation-pending-icon";
 import { mosquePublicPath, type Mosque } from "@/lib/mosques";
 import { displayTime, splitTime, toMinutes } from "@/lib/jamaat-time";
+import { subscribeToMosqueAlerts } from "@/lib/push-client";
 import { isJumuahPrayer, type PrayerTime } from "@/lib/prayers";
 import {
   PRAYER_URDU,
@@ -35,14 +36,6 @@ type InstallPrompt = Event & {
 
 const DIAMONDS = Array.from({ length: 13 });
 const TASSELS = Array.from({ length: 28 });
-
-function urlBase64ToUint8Array(value: string) {
-  const padding = "=".repeat((4 - (value.length % 4)) % 4);
-  const base64 = (value + padding).replace(/-/g, "+").replace(/_/g, "/");
-  return Uint8Array.from(window.atob(base64), (character) =>
-    character.charCodeAt(0),
-  );
-}
 
 export function PrayerDashboard({
   mosque,
@@ -209,36 +202,7 @@ export function PrayerDashboard({
 
     setAlertState("working");
     try {
-      const permission = await Notification.requestPermission();
-      if (permission !== "granted") {
-        throw new Error("Notification permission was not granted.");
-      }
-      const configResponse = await fetch("/api/push/config");
-      const config = (await configResponse.json()) as { publicKey?: string };
-      if (!config.publicKey) {
-        throw new Error("Notifications are awaiting final mosque setup.");
-      }
-      const registration = await navigator.serviceWorker.ready;
-      const subscription =
-        (await registration.pushManager.getSubscription()) ??
-        (await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(config.publicKey),
-        }));
-      const response = await fetch("/api/push/subscribe", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          mosqueId: mosque.id,
-          endpoint: subscription.endpoint,
-          keys: {
-            p256dh: subscription.toJSON().keys?.p256dh,
-            auth: subscription.toJSON().keys?.auth,
-          },
-          locale: navigator.language.toLowerCase().startsWith("ur") ? "ur" : "en",
-        }),
-      });
-      if (!response.ok) throw new Error("This device could not be registered.");
+      await subscribeToMosqueAlerts(mosque.id);
       setAlertState("enabled");
       setStatusMessage(publicCopy.alertsEnabled);
     } catch (error) {

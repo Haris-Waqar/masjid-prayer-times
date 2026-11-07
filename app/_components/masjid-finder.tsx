@@ -13,6 +13,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Bell,
+  BellRing,
   Check,
   ChevronRight,
   Clock,
@@ -27,11 +28,18 @@ import {
   splitTime,
 } from "@/lib/jamaat-time";
 import { mosquePublicPath } from "@/lib/mosques";
+import {
+  isPushSupported,
+  readAlertStatus,
+  subscribeToMosqueAlerts,
+} from "@/lib/push-client";
 import type { PrayerTime } from "@/lib/prayers";
 import { PRAYER_URDU, remainingCopy } from "@/lib/ui-copy";
 
 /** Public, serializable summary of one active masjid for the landing page. */
 export type MasjidOption = {
+  /** Public mosque ID, needed to subscribe this device to its alerts. */
+  id: string;
   slug: string;
   name: string;
   location: string;
@@ -44,6 +52,14 @@ export type MasjidOption = {
 
 type Step = "find" | "preview" | "saved";
 type SaveState = "idle" | "saving" | "error";
+type AlertState =
+  | "checking"
+  | "idle"
+  | "working"
+  | "enabled"
+  | "blocked"
+  | "unsupported"
+  | "error";
 type ApiResult = { ok?: boolean; error?: string };
 
 const DIAMONDS = Array.from({ length: 13 });
@@ -77,6 +93,8 @@ export function MasjidFinder({ masjids }: { masjids: MasjidOption[] }) {
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [saveError, setSaveError] = useState("");
   const [now, setNow] = useState<Date | null>(null);
+  const [alertState, setAlertState] = useState<AlertState>("checking");
+  const [alertError, setAlertError] = useState("");
 
   const finderRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -87,6 +105,7 @@ export function MasjidFinder({ masjids }: { masjids: MasjidOption[] }) {
   const listId = useId();
   const coverageId = useId();
   const todayHeadingId = useId();
+  const alertsHeadingId = useId();
 
   useEffect(() => {
     const initial = window.setTimeout(() => setNow(new Date()), 0);
@@ -127,6 +146,23 @@ export function MasjidFinder({ masjids }: { masjids: MasjidOption[] }) {
   const matches = needle ? sorted.filter((masjid) => matchesQuery(masjid, needle)) : sorted;
 
   const selected = masjids.find((masjid) => masjid.slug === selectedSlug) ?? null;
+  const selectedId = selected?.id;
+
+  // Once saved, find out whether this device already gets this masjid's alerts.
+  useEffect(() => {
+    if (step !== "saved" || !selectedId) return;
+    let cancelled = false;
+    readAlertStatus(selectedId)
+      .then((status) => {
+        if (!cancelled) setAlertState(status);
+      })
+      .catch(() => {
+        if (!cancelled) setAlertState("idle");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [step, selectedId]);
   const selectedNext =
     selected?.published && now
       ? findNextJamaat(selected.times, minutesInTimezone(selected.timezone, now))
@@ -193,6 +229,8 @@ export function MasjidFinder({ masjids }: { masjids: MasjidOption[] }) {
         throw new Error(result.error ?? "Your masjid could not be saved.");
       }
       setSaveState("idle");
+      setAlertState("checking");
+      setAlertError("");
       setStep("saved");
     } catch (error) {
       setSaveState("error");
@@ -205,6 +243,31 @@ export function MasjidFinder({ masjids }: { masjids: MasjidOption[] }) {
   }
 
   const masjidCount = `${masjids.length} ${masjids.length === 1 ? "masjid" : "masjids"}`;
+  async function turnOnAlerts() {
+    if (!selected || alertState === "working") return;
+    if (!isPushSupported()) {
+      setAlertState("unsupported");
+      return;
+    }
+    setAlertState("working");
+    setAlertError("");
+    try {
+      await subscribeToMosqueAlerts(selected.id);
+      setAlertState("enabled");
+    } catch (error) {
+      if (Notification.permission === "denied") {
+        setAlertState("blocked");
+        return;
+      }
+      setAlertState("error");
+      setAlertError(
+        error instanceof Error && error.message
+          ? error.message
+          : "Notifications could not be enabled.",
+      );
+    }
+  }
+
   const countLabel = needle
     ? `${matches.length} of ${masjidCount}`
     : masjids.length === 1
@@ -407,7 +470,7 @@ export function MasjidFinder({ masjids }: { masjids: MasjidOption[] }) {
               <span aria-hidden="true">
                 <Check size={14} strokeWidth={3} />
               </span>
-              Saved in this browser
+              Saved on this device
             </p>
             <h1 ref={headingRef} tabIndex={-1} className="landing-title is-compact">
               {selected.name} is your masjid
@@ -416,10 +479,50 @@ export function MasjidFinder({ masjids }: { masjids: MasjidOption[] }) {
               Next time you open Masjid Prayer Times, you&apos;ll go straight to its
               timetable.
             </p>
-            <p className="landing-alert-tip">
-              <Bell size={18} aria-hidden="true" />
-              To be told when a jamaat time changes, tap the bell on the timetable.
-            </p>
+
+            <section className="landing-alerts" aria-labelledby={alertsHeadingId}>
+              <span className="landing-alerts-icon" aria-hidden="true">
+                {alertState === "enabled" ? <BellRing size={20} /> : <Bell size={20} />}
+              </span>
+              <div className="landing-alerts-copy" role="status" aria-live="polite">
+                <h2 id={alertsHeadingId}>
+                  {alertState === "enabled"
+                    ? "Alerts are on"
+                    : "Get told when a jamaat time changes"}
+                </h2>
+                <p>
+                  {!selected.published
+                    ? "Alerts can be turned on once today's jamaat times are posted."
+                    : alertState === "enabled"
+                      ? `You'll get a notification when ${selected.name} changes a jamaat time.`
+                      : alertState === "blocked"
+                        ? "Notifications are blocked for this site. Allow them in your browser's settings, then try again."
+                        : alertState === "unsupported"
+                          ? "This browser does not support web push notifications."
+                          : "Only when the masjid changes a jamaat time. Nothing else."}
+                </p>
+                {alertState === "error" ? (
+                  <p className="field-error" role="alert">
+                    {alertError}
+                  </p>
+                ) : null}
+              </div>
+              {selected.published &&
+              (alertState === "idle" ||
+                alertState === "checking" ||
+                alertState === "working" ||
+                alertState === "error") ? (
+                <button
+                  type="button"
+                  className="landing-alerts-button"
+                  onClick={turnOnAlerts}
+                  disabled={alertState === "checking" || alertState === "working"}
+                >
+                  {alertState === "working" ? "Turning on…" : "Turn on alerts"}
+                </button>
+              ) : null}
+            </section>
+
             <div className="landing-actions">
               <Link className="primary-button" href={mosquePublicPath(selected.slug)}>
                 Open timetable

@@ -18,6 +18,7 @@ async function toMasjidOption(mosque: Mosque): Promise<MasjidOption> {
   // Each mosque's "today" is its own local date, never the server's.
   const schedule = await getPrayerSchedule(mosque.id, dateInTimezone(mosque.timezone));
   return {
+    id: mosque.id,
     slug: mosque.slug,
     name: mosque.name,
     location: mosque.location,
