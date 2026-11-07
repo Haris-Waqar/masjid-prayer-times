@@ -90,6 +90,8 @@ export function MasjidFinder({ masjids }: { masjids: MasjidOption[] }) {
   const [query, setQuery] = useState("");
   const [listOpen, setListOpen] = useState(false);
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
+  // The masjid saved during this visit; picking it again opens its timetable.
+  const [savedSlug, setSavedSlug] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [saveError, setSaveError] = useState("");
   const [now, setNow] = useState<Date | null>(null);
@@ -231,6 +233,7 @@ export function MasjidFinder({ masjids }: { masjids: MasjidOption[] }) {
       setSaveState("idle");
       setAlertState("checking");
       setAlertError("");
+      setSavedSlug(selected.slug);
       setStep("saved");
     } catch (error) {
       setSaveState("error");
@@ -345,23 +348,45 @@ export function MasjidFinder({ masjids }: { masjids: MasjidOption[] }) {
                           const meta = nextLabel(masjid);
                           return (
                             <li key={masjid.slug}>
-                              <button
-                                type="button"
-                                className="finder-option"
-                                onClick={() => pick(masjid.slug)}
-                              >
-                                <RowArch />
-                                <span className="finder-option-text">
-                                  <span className="finder-option-name">{masjid.name}</span>
-                                  <span className="finder-option-area">{masjid.location}</span>
-                                </span>
-                                {meta ? <span className="finder-option-meta">{meta}</span> : null}
-                                <ChevronRight
-                                  className="finder-option-chevron"
-                                  size={18}
-                                  aria-hidden="true"
-                                />
-                              </button>
+                              {masjid.slug === savedSlug ? (
+                                <Link
+                                  className="finder-option"
+                                  href={mosquePublicPath(masjid.slug)}
+                                >
+                                  <RowArch />
+                                  <span className="finder-option-text">
+                                    <span className="finder-option-name">
+                                      {masjid.name}
+                                      <span className="finder-option-badge">Your masjid</span>
+                                    </span>
+                                    <span className="finder-option-area">{masjid.location}</span>
+                                  </span>
+                                  {meta ? <span className="finder-option-meta">{meta}</span> : null}
+                                  <ChevronRight
+                                    className="finder-option-chevron"
+                                    size={18}
+                                    aria-hidden="true"
+                                  />
+                                </Link>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="finder-option"
+                                  onClick={() => pick(masjid.slug)}
+                                >
+                                  <RowArch />
+                                  <span className="finder-option-text">
+                                    <span className="finder-option-name">{masjid.name}</span>
+                                    <span className="finder-option-area">{masjid.location}</span>
+                                  </span>
+                                  {meta ? <span className="finder-option-meta">{meta}</span> : null}
+                                  <ChevronRight
+                                    className="finder-option-chevron"
+                                    size={18}
+                                    aria-hidden="true"
+                                  />
+                                </button>
+                              )}
                             </li>
                           );
                         })}

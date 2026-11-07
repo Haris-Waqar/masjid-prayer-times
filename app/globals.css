@@ -2379,6 +2379,24 @@ footer a {
   background: var(--paper);
 }
 
+a.finder-option {
+  text-decoration: none;
+}
+
+.finder-option-badge {
+  background: var(--jade-light);
+  border-radius: 999px;
+  color: var(--forest);
+  display: inline-block;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  margin-inline-start: 8px;
+  padding: 2px 8px;
+  text-transform: uppercase;
+  vertical-align: 2px;
+}
+
 .finder-option .row-arch {
   color: var(--brass-deep);
 }
