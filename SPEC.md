@@ -9,7 +9,12 @@ never requires a visitor account.
 ## Public experience
 
 - Give every active mosque a stable, shareable public page.
-- Show a first-visit mosque selector and a simple mosque switcher.
+- Show a first-visit landing page that guides a visitor to their mosque: one
+  search field that lists every active mosque A–Z when tapped and filters by
+  name or location as they type, a preview of the chosen mosque's posted
+  jamaat times, then an explicit choice to save it as the default or just
+  view its timetable. Never show unposted or estimated times in the preview.
+- Keep a simple mosque switcher on the timetable page.
 - Let a visitor explicitly choose a default mosque and store only its stable
   identifier in a first-party browser cookie.
 - Opening a shared mosque page must not silently replace an existing default.

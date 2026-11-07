@@ -6,9 +6,16 @@ test("public timetable renders the mosque and today's prayers", async ({
   await page.goto("/");
 
   await expect(
-    page.getByRole("heading", { name: "Choose your masjid" }),
+    page.getByRole("heading", { name: "Never miss jamaat at your masjid" }),
   ).toBeVisible();
-  await page.getByRole("link", { name: "View timetable" }).click();
+  await page.getByLabel("Find your masjid").click();
+  await page
+    .getByRole("button", { name: /Jamia Masjid Fazaia Housing/ })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Jamia Masjid Fazaia Housing" }),
+  ).toBeFocused();
+  await page.getByRole("link", { name: "Just view the timetable" }).click();
   await expect(page).toHaveURL(/\/masjids\/fazaia-town$/);
 
   await expect(

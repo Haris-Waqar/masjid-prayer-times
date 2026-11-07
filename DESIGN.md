@@ -14,7 +14,13 @@ or Segoe UI keeps controls highly legible without downloading web fonts.
 
 ## Layout
 
-Mobile puts the next jamaat first, then the timetable (five daily rows plus
+The first-visit landing page is a guided choice, not a directory: headline,
+one "Find your masjid" field (tap to list every masjid A–Z, type to filter),
+then a preview and a saved confirmation. A tall mihrab panel beside it stays
+empty-but-inviting until a masjid is picked, then shows that masjid's real next
+jamaat. Returning visitors with a saved masjid go straight to its timetable.
+
+On a timetable page, mobile puts the next jamaat first, then the timetable (five daily rows plus
 Jumu'ah) and install action.
 Desktop pairs a tall mihrab-shaped next-prayer field with the timetable. Content
 is left aligned except for the centered next-prayer focus.

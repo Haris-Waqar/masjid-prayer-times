@@ -8,6 +8,7 @@ import { Bell, BellOff, BellRing, Clock, RefreshCw, Settings } from "lucide-reac
 import { DefaultMosqueButton } from "@/app/components/default-mosque-controls";
 import { NavigationPendingIcon } from "@/app/navigation-pending-icon";
 import { mosquePublicPath, type Mosque } from "@/lib/mosques";
+import { displayTime, splitTime, toMinutes } from "@/lib/jamaat-time";
 import { isJumuahPrayer, type PrayerTime } from "@/lib/prayers";
 import {
   PRAYER_URDU,
@@ -31,29 +32,6 @@ type InstallPrompt = Event & {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 };
-
-function toMinutes(value: string) {
-  const [hours, minutes] = value.split(":").map(Number);
-  return hours * 60 + minutes;
-}
-
-function displayTime(value: string) {
-  const [hours, minutes] = value.split(":").map(Number);
-  return new Intl.DateTimeFormat("en", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-    timeZone: "UTC",
-  }).format(new Date(Date.UTC(2020, 0, 1, hours, minutes)));
-}
-
-function splitTime(value: string) {
-  const formatted = displayTime(value);
-  const match = formatted.match(/^(.*?)\s*(AM|PM)$/i);
-  return match
-    ? { value: match[1], suffix: match[2].toUpperCase() }
-    : { value: formatted, suffix: "" };
-}
 
 const DIAMONDS = Array.from({ length: 13 });
 const TASSELS = Array.from({ length: 28 });
