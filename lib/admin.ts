@@ -8,6 +8,7 @@ import {
   type AdminAccess,
   type AdminRole,
 } from "@/lib/admin-policy";
+import { mapMosqueRow } from "@/lib/mosques";
 import {
   ADMIN_USER_HEADER,
   parseForwardedUser,
@@ -19,7 +20,49 @@ type MembershipRow = {
   user_id: string;
   email: string;
   role: AdminRole;
+  can_manage_mosjids: boolean;
 };
+
+const MOSQUE_COLUMNS =
+  "id,slug,name,location,timezone,active,created_at,updated_at";
+
+type MappedMosque = NonNullable<ReturnType<typeof mapMosqueRow>>;
+
+function isMappedMosque(
+  mosque: ReturnType<typeof mapMosqueRow>,
+): mosque is MappedMosque {
+  return mosque !== null;
+}
+
+async function loadAccessibleMosques(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  membership: MembershipRow,
+) {
+  if (membership.role === "super_admin") {
+    const result = await supabase
+      .from("mosques")
+      .select(MOSQUE_COLUMNS)
+      .eq("active", true)
+      .order("name");
+    if (result.error) throw result.error;
+    return (result.data ?? []).map(mapMosqueRow).filter(isMappedMosque);
+  }
+
+  const result = await supabase
+    .from("admin_mosque_access")
+    .select(`mosque_id,mosques(${MOSQUE_COLUMNS})`)
+    .eq("admin_member_id", membership.id);
+  if (result.error) throw result.error;
+
+  return (result.data ?? [])
+    .map((assignment) => {
+      const related = assignment.mosques;
+      return mapMosqueRow(Array.isArray(related) ? related[0] : related);
+    })
+    .filter(isMappedMosque)
+    .filter((row) => row.active)
+    .sort((left, right) => left.name.localeCompare(right.name));
+}
 
 // The proxy middleware validates the session once per request and forwards the
 // user via a trusted header, so we can skip a second network round-trip to the
@@ -58,13 +101,15 @@ export const getAdminSession = cache(async function getAdminSession(): Promise<{
   const supabase = await createClient();
   const { data } = await supabase
     .from("admin_members")
-    .select("id,user_id,email,role")
+    .select("id,user_id,email,role,can_manage_mosjids")
     .eq("user_id", user.id)
     .eq("active", true)
     .maybeSingle();
 
   const membership = data as MembershipRow | null;
   if (!membership) return { access: null, user };
+
+  const mosques = await loadAccessibleMosques(supabase, membership);
 
   return {
     user,
@@ -73,6 +118,15 @@ export const getAdminSession = cache(async function getAdminSession(): Promise<{
       email: membership.email.toLowerCase(),
       membershipId: membership.id,
       role: membership.role,
+      canManageMasjids: membership.can_manage_mosjids,
+      assignedMosqueIds: mosques.map((mosque) => mosque.id),
+      assignedMosques: mosques.map((mosque) => ({
+        id: mosque.id,
+        slug: mosque.slug,
+        name: mosque.name,
+        location: mosque.location,
+        timezone: mosque.timezone,
+      })),
       passwordSetupRequired: user.app_metadata?.must_change_password === true,
     },
   };

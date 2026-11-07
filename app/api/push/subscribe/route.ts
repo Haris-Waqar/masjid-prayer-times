@@ -1,49 +1,40 @@
 import { createHash } from "node:crypto";
+import {
+  isAllowedPushEndpoint,
+  isMosqueId,
+  isRecord,
+  readBoundedJson,
+} from "@/lib/push-subscription";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-const MAX_BODY_BYTES = 8_192;
-
 type SubscriptionInput = {
+  mosqueId?: string;
   endpoint?: string;
   keys?: { p256dh?: string; auth?: string };
   locale?: string;
 };
 
-function isAllowedPushEndpoint(value: string) {
-  try {
-    const url = new URL(value);
-    if (url.protocol !== "https:" || url.username || url.password || url.port) return false;
-    const host = url.hostname.toLowerCase();
-    return (
-      host === "fcm.googleapis.com" ||
-      host === "updates.push.services.mozilla.com" ||
-      host === "web.push.apple.com" ||
-      host.endsWith(".notify.windows.com")
-    );
-  } catch {
-    return false;
-  }
+async function activeMosqueExists(mosqueId: string) {
+  const { data, error } = await createAdminClient()
+    .from("mosques")
+    .select("id")
+    .eq("id", mosqueId)
+    .eq("active", true)
+    .maybeSingle();
+  if (error) throw error;
+  return Boolean(data);
 }
 
 export async function POST(request: Request) {
-  const declaredLength = Number(request.headers.get("content-length") ?? 0);
-  if (declaredLength > MAX_BODY_BYTES) {
-    return Response.json({ error: "Request is too large." }, { status: 413 });
+  const parsed = await readBoundedJson(request);
+  if (!parsed.ok) return parsed.response;
+  if (!isRecord(parsed.value)) {
+    return Response.json({ error: "Invalid push subscription." }, { status: 400 });
   }
-
-  const raw = await request.text();
-  if (new TextEncoder().encode(raw).byteLength > MAX_BODY_BYTES) {
-    return Response.json({ error: "Request is too large." }, { status: 413 });
-  }
-
-  let input: SubscriptionInput;
-  try {
-    input = JSON.parse(raw) as SubscriptionInput;
-  } catch {
-    return Response.json({ error: "Invalid JSON." }, { status: 400 });
-  }
+  const input = parsed.value as SubscriptionInput;
 
   if (
+    !isMosqueId(input.mosqueId) ||
     !input.endpoint ||
     !isAllowedPushEndpoint(input.endpoint) ||
     !input.keys?.p256dh ||
@@ -60,6 +51,14 @@ export async function POST(request: Request) {
     return Response.json({ error: "Invalid alert language." }, { status: 400 });
   }
 
+  try {
+    if (!(await activeMosqueExists(input.mosqueId))) {
+      return Response.json({ error: "Mosque is unavailable." }, { status: 404 });
+    }
+  } catch {
+    return Response.json({ error: "Could not verify this mosque." }, { status: 500 });
+  }
+
   const clientAddress =
     request.headers.get("x-real-ip") ??
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
@@ -72,6 +71,7 @@ export async function POST(request: Request) {
     .digest("hex");
 
   const { error } = await createAdminClient().rpc("register_push_subscription", {
+    p_mosque_id: input.mosqueId,
     p_endpoint: input.endpoint,
     p_p256dh: input.keys.p256dh,
     p_auth: input.keys.auth,
@@ -87,32 +87,28 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const declaredLength = Number(request.headers.get("content-length") ?? 0);
-  if (declaredLength > MAX_BODY_BYTES) {
-    return Response.json({ error: "Request is too large." }, { status: 413 });
+  const parsed = await readBoundedJson(request);
+  if (!parsed.ok) return parsed.response;
+  if (!isRecord(parsed.value)) {
+    return Response.json({ error: "Invalid push subscription." }, { status: 400 });
   }
+  const input = parsed.value as SubscriptionInput;
 
-  const raw = await request.text();
-  if (new TextEncoder().encode(raw).byteLength > MAX_BODY_BYTES) {
-    return Response.json({ error: "Request is too large." }, { status: 413 });
-  }
-
-  let input: SubscriptionInput;
-  try {
-    input = JSON.parse(raw) as SubscriptionInput;
-  } catch {
-    return Response.json({ error: "Invalid JSON." }, { status: 400 });
-  }
-
-  if (!input.endpoint || !isAllowedPushEndpoint(input.endpoint) || input.endpoint.length > 2_048) {
+  if (!isMosqueId(input.mosqueId) || !isAllowedPushEndpoint(input.endpoint)) {
     return Response.json({ error: "Invalid push subscription." }, { status: 400 });
   }
 
   const { error } = await createAdminClient()
-    .from("push_subscriptions")
+    .from("push_subscription_mosques")
     .delete()
-    .eq("endpoint", input.endpoint);
+    .eq("endpoint", input.endpoint)
+    .eq("mosque_id", input.mosqueId);
 
-  if (error) return Response.json({ error: "Could not remove this device." }, { status: 500 });
+  if (error) {
+    return Response.json(
+      { error: "Could not disable alerts for this mosque." },
+      { status: 500 },
+    );
+  }
   return Response.json({ ok: true });
 }

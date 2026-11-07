@@ -17,6 +17,9 @@ describe("GET /api/admin/access-status", () => {
         membershipId: "member-1",
         email: "admin@example.org",
         role: "admin",
+        canManageMasjids: false,
+        assignedMosqueIds: ["mosque-1"],
+        assignedMosques: [],
         passwordSetupRequired: true,
       },
     } as never);
@@ -29,6 +32,8 @@ describe("GET /api/admin/access-status", () => {
       role: "admin",
       canEdit: false,
       canManage: false,
+      canManageMasjids: false,
+      mosques: [],
       passwordSetupRequired: true,
     });
   });
@@ -41,6 +46,9 @@ describe("GET /api/admin/access-status", () => {
         membershipId: "member-2",
         email: "boss@example.org",
         role: "super_admin",
+        canManageMasjids: false,
+        assignedMosqueIds: [],
+        assignedMosques: [],
         passwordSetupRequired: false,
       },
     } as never);
@@ -52,6 +60,8 @@ describe("GET /api/admin/access-status", () => {
       role: "super_admin",
       canEdit: true,
       canManage: true,
+      canManageMasjids: true,
+      mosques: [],
       passwordSetupRequired: false,
     });
   });
@@ -70,5 +80,24 @@ describe("GET /api/admin/access-status", () => {
       error:
         "Administrator access is inactive or has been revoked. Contact the super administrator.",
     });
+  });
+
+  it("returns a server error instead of misreporting a database failure as denied access", async () => {
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.mocked(getAdminSession).mockRejectedValueOnce(
+      new Error('relation "mosques" does not exist'),
+    );
+
+    const response = await GET(request);
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({
+      error: "Administrator access could not be verified. Please try again.",
+    });
+    expect(errorLog).toHaveBeenCalledWith(
+      "Admin operation failed",
+      expect.objectContaining({ operation: "check_admin_access" }),
+    );
+    errorLog.mockRestore();
   });
 });

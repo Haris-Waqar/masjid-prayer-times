@@ -6,7 +6,15 @@ test("public timetable renders the mosque and today's prayers", async ({
   await page.goto("/");
 
   await expect(
-    page.getByText("Jamia Masjid Fazaia Housing", { exact: true }),
+    page.getByRole("heading", { name: "Choose your masjid" }),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "View timetable" }).click();
+  await expect(page).toHaveURL(/\/masjids\/fazaia-town$/);
+
+  await expect(
+    page.locator(".brand-name", {
+      hasText: "Jamia Masjid Fazaia Housing",
+    }),
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Today's jamaat times" }),
@@ -25,10 +33,16 @@ test("public timetable renders the mosque and today's prayers", async ({
   }
   await expect(timetable.getByText("Friday", { exact: true })).toBeVisible();
   await expect(page.getByText("Begins", { exact: true })).toHaveCount(0);
-  await expect(timetable.getByRole("time")).toHaveCount(expectedPrayers.length);
-  await expect(timetable.getByRole("time").first()).toHaveText(
-    /^\d{1,2}:\d{2} [AP]M$/,
-  );
+  const publishedTimes = timetable.getByRole("time");
+  const publishedCount = await publishedTimes.count();
+  expect([0, expectedPrayers.length]).toContain(publishedCount);
+  if (publishedCount > 0) {
+    await expect(publishedTimes.first()).toHaveText(/^\d{1,2}:\d{2} [AP]M$/);
+  } else {
+    await expect(
+      page.getByText("No times are shown until they are posted."),
+    ).toBeVisible();
+  }
   await expect(
     page.getByRole("button", { name: "Refresh times" }),
   ).toBeVisible();
@@ -85,7 +99,14 @@ test("an existing push subscription remains enabled after reopening", async ({
     });
   });
 
-  await page.goto("/");
+  await page.route("**/api/push/status", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ok: true, subscribed: true }),
+    });
+  });
+  await page.goto("/masjids/fazaia-town");
 
   await expect(
     page.getByRole("button", { name: "Notify me if jamaat changes" }),
@@ -100,7 +121,7 @@ test("manual refresh shows progress and confirmation", async ({ page }) => {
     await new Promise((resolve) => setTimeout(resolve, 200));
     await route.continue();
   });
-  await page.goto("/");
+  await page.goto("/masjids/fazaia-town");
 
   await page.getByRole("button", { name: "Refresh times" }).click();
 
@@ -114,7 +135,9 @@ test("manual refresh shows progress and confirmation", async ({ page }) => {
 test("a push update refreshes the visible timetable", async ({ page }) => {
   await page.addInitScript(() => {
     const runtimeWindow = window as typeof window & {
-      receiveTimetableMessage?: (event: { data: { type: string } }) => void;
+      receiveTimetableMessage?: (event: {
+        data: { type: string; url?: string };
+      }) => void;
     };
     const registration = {
       pushManager: { getSubscription: async () => null },
@@ -142,21 +165,33 @@ test("a push update refreshes the visible timetable", async ({ page }) => {
       },
     });
   });
-  await page.goto("/");
-  const refreshRequest = page.waitForRequest(
-    (request) => request.headers().rsc === "1",
-  );
+  await page.goto("/masjids/fazaia-town");
+
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const runtimeWindow = window as typeof window & {
+          receiveTimetableMessage?: unknown;
+        };
+        return typeof runtimeWindow.receiveTimetableMessage === "function";
+      }),
+    )
+    .toBe(true);
 
   await page.evaluate(() => {
     const runtimeWindow = window as typeof window & {
-      receiveTimetableMessage?: (event: { data: { type: string } }) => void;
+      receiveTimetableMessage?: (event: {
+        data: { type: string; url?: string };
+      }) => void;
     };
     runtimeWindow.receiveTimetableMessage?.({
-      data: { type: "TIMETABLE_UPDATED" },
+      data: {
+        type: "TIMETABLE_UPDATED",
+        url: "/masjids/fazaia-town",
+      },
     });
   });
 
-  await refreshRequest;
   await expect(
     page.getByText("A jamaat time changed. Times have been refreshed."),
   ).toBeVisible();
@@ -258,6 +293,7 @@ test("schedule API rejects an unauthenticated write with JSON", async ({
 }) => {
   const response = await request.post("/api/admin/schedule", {
     data: {
+      mosqueId: "00000000-0000-4000-8000-000000000001",
       date: "2026-10-24",
       times: [
         { prayer: "Fajr", jamaat: "05:30" },

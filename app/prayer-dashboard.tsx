@@ -2,14 +2,13 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Bell, BellOff, BellRing, Clock, RefreshCw, Settings } from "lucide-react";
+import { DefaultMosqueButton } from "@/app/components/default-mosque-controls";
 import { NavigationPendingIcon } from "@/app/navigation-pending-icon";
-import {
-  isJumuahPrayer,
-  type MosqueSettings,
-  type PrayerTime,
-} from "@/lib/prayers";
+import { mosquePublicPath, type Mosque } from "@/lib/mosques";
+import { isJumuahPrayer, type PrayerTime } from "@/lib/prayers";
 import {
   PRAYER_URDU,
   publicCopy,
@@ -19,7 +18,9 @@ import {
 } from "@/lib/ui-copy";
 
 type Props = {
-  settings: MosqueSettings;
+  mosque: Mosque;
+  availableMosques: Mosque[];
+  isDefaultMosque: boolean;
   date: string;
   times: PrayerTime[];
   schedulePublished: boolean;
@@ -66,13 +67,16 @@ function urlBase64ToUint8Array(value: string) {
 }
 
 export function PrayerDashboard({
-  settings,
+  mosque,
+  availableMosques,
+  isDefaultMosque,
   date,
   times,
   schedulePublished,
   canUpdateTimes,
 }: Props) {
   const router = useRouter();
+  const canonicalPath = mosquePublicPath(mosque.slug);
   const [now, setNow] = useState<Date | null>(null);
   const [installPrompt, setInstallPrompt] = useState<InstallPrompt | null>(null);
   const [isAppInstalled, setIsAppInstalled] = useState(false);
@@ -107,7 +111,12 @@ export function PrayerDashboard({
     };
     window.addEventListener("beforeinstallprompt", captureInstallPrompt);
     const receiveServiceWorkerMessage = (event: MessageEvent) => {
-      if (event.data?.type !== "TIMETABLE_UPDATED") return;
+      if (
+        event.data?.type !== "TIMETABLE_UPDATED" ||
+        event.data?.url !== canonicalPath
+      ) {
+        return;
+      }
       setStatusMessage(publicCopy.jamaatChanged);
       startRefresh(() => router.refresh());
     };
@@ -130,7 +139,20 @@ export function PrayerDashboard({
         if (Notification.permission === "denied") {
           setAlertState("blocked");
         } else if (subscription && Notification.permission === "granted") {
-          setAlertState("enabled");
+          const statusResponse = await fetch("/api/push/status", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              mosqueId: mosque.id,
+              endpoint: subscription.endpoint,
+            }),
+          });
+          const status = (await statusResponse.json()) as {
+            subscribed?: boolean;
+          };
+          setAlertState(
+            statusResponse.ok && status.subscribed ? "enabled" : "idle",
+          );
         } else {
           setAlertState("idle");
         }
@@ -150,7 +172,7 @@ export function PrayerDashboard({
         navigator.serviceWorker.removeEventListener("message", receiveServiceWorkerMessage);
       }
     };
-  }, [router]);
+  }, [canonicalPath, mosque.id, router]);
 
   useEffect(() => {
     if (!statusMessage) return;
@@ -162,7 +184,7 @@ export function PrayerDashboard({
   const currentMinutes = useMemo(() => {
     if (!now) return 0;
     const parts = new Intl.DateTimeFormat("en-GB", {
-      timeZone: settings.timezone,
+      timeZone: mosque.timezone,
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
@@ -172,7 +194,7 @@ export function PrayerDashboard({
       parts.find((part) => part.type === "minute")?.value ?? 0,
     );
     return hours * 60 + minutes;
-  }, [now, settings.timezone]);
+  }, [now, mosque.timezone]);
 
   // Jumu'ah is a Friday callout at the bottom; next jamaat uses the daily five.
   const dailyTimes = useMemo(
@@ -229,6 +251,7 @@ export function PrayerDashboard({
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
+          mosqueId: mosque.id,
           endpoint: subscription.endpoint,
           keys: {
             p256dh: subscription.toJSON().keys?.p256dh,
@@ -264,11 +287,12 @@ export function PrayerDashboard({
         const response = await fetch("/api/push/subscribe", {
           method: "DELETE",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ endpoint: subscription.endpoint }),
+          body: JSON.stringify({
+            mosqueId: mosque.id,
+            endpoint: subscription.endpoint,
+          }),
         });
         if (!response.ok) throw new Error("Alerts could not be disabled on this device.");
-        const unsubscribed = await subscription.unsubscribe();
-        if (!unsubscribed) throw new Error("Alerts could not be disabled on this device.");
       }
       setAlertState("idle");
       setStatusMessage(publicCopy.alertsDisabled);
@@ -288,7 +312,9 @@ export function PrayerDashboard({
     setIsManualRefreshing(true);
     setStatusMessage(publicCopy.refreshing);
     try {
-      const response = await fetch(`/?refresh=${Date.now()}`, { cache: "no-store" });
+      const response = await fetch(`${canonicalPath}?refresh=${Date.now()}`, {
+        cache: "no-store",
+      });
       if (!response.ok) throw new Error("Refresh failed");
       startRefresh(() => router.refresh());
       await new Promise((resolve) => window.setTimeout(resolve, 350));
@@ -324,15 +350,15 @@ export function PrayerDashboard({
 
   const bellBusy = alertState === "checking" || alertState === "working" || isDisablingAlerts;
   const bellDisabled = bellBusy || alertState === "unsupported";
-  const bellLabel = !schedulePublished
-    ? publicCopy.alertsAfterPosting.en
-    : alertState === "blocked"
+  const bellLabel = showDisableAlerts
+    ? publicCopy.disableAlerts.en
+    : !schedulePublished
+      ? publicCopy.alertsAfterPosting.en
+      : alertState === "blocked"
       ? publicCopy.alertsBlocked.en
       : alertState === "unsupported"
         ? publicCopy.alertsUnavailable.en
-        : showDisableAlerts
-          ? publicCopy.disableAlerts.en
-          : publicCopy.notify.en;
+        : publicCopy.notify.en;
 
   const formattedDate = new Intl.DateTimeFormat("en", {
     weekday: "long",
@@ -346,7 +372,7 @@ export function PrayerDashboard({
   return (
     <main className="app-shell">
       <header className="site-header">
-        <img
+        <Image
           className="brand-mark"
           src="/favicon.svg"
           alt=""
@@ -355,9 +381,9 @@ export function PrayerDashboard({
           aria-hidden="true"
         />
         <div className="brand-copy">
-          <p className="brand-name">{settings.name}</p>
+          <p className="brand-name">{mosque.name}</p>
           <p className="brand-location">
-            {settings.location} · {formattedDate}
+            {mosque.location} · {formattedDate}
           </p>
         </div>
         <button
@@ -383,6 +409,32 @@ export function PrayerDashboard({
           )}
         </button>
       </header>
+
+      <nav className="mosque-toolbar" aria-label="Masjid options">
+        <label htmlFor="mosque-switcher">
+          <span>Masjid</span>
+          <select
+            id="mosque-switcher"
+            value={mosque.slug}
+            onChange={(event) => {
+              const nextSlug = event.currentTarget.value;
+              if (nextSlug !== mosque.slug) router.push(mosquePublicPath(nextSlug));
+            }}
+          >
+            {availableMosques.map((item) => (
+              <option key={item.id} value={item.slug}>
+                {item.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <DefaultMosqueButton
+          slug={mosque.slug}
+          mosqueName={mosque.name}
+          isDefault={isDefaultMosque}
+          className="default-toolbar-button"
+        />
+      </nav>
 
       {alertState === "blocked" && (
         <p className="alert-banner" role="status">
@@ -580,8 +632,8 @@ export function PrayerDashboard({
                     month: "short",
                     hour: "numeric",
                     minute: "2-digit",
-                    timeZone: settings.timezone,
-                  }).format(new Date(settings.updatedAt)),
+                    timeZone: mosque.timezone,
+                  }).format(new Date(mosque.updatedAt)),
                 ).en}
               </span>
             ) : (

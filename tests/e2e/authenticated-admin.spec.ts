@@ -34,7 +34,11 @@ test("posting a jamaat change requires an explicit confirmation", async ({
   test.setTimeout(60_000);
 
   let posted:
-    | { date?: string; times?: Array<{ prayer?: string; jamaat?: string }> }
+    | {
+        mosqueId?: string;
+        date?: string;
+        times?: Array<{ prayer?: string; jamaat?: string }>;
+      }
     | undefined;
   await page.route("**/api/admin/schedule", async (route) => {
     if (route.request().method() !== "POST") {
@@ -71,6 +75,9 @@ test("posting a jamaat change requires an explicit confirmation", async ({
     page.getByText("Posted 1 change. 0 subscribed devices were notified."),
   ).toBeVisible();
   expect(posted?.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  expect(posted?.mosqueId).toMatch(
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+  );
   expect(posted?.times).toEqual(
     expect.arrayContaining([
       expect.objectContaining({ prayer: "Fajr", jamaat: nextJamaat }),

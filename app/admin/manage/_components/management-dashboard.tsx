@@ -113,6 +113,79 @@ export function ManagementDashboard({
     }
   }
 
+  async function changeMosqueManagement(admin: SafeAdmin) {
+    const enabled = !admin.canManageMasjids;
+    const busyKey = `${admin.id}:management`;
+    setAccessBusyId(busyKey);
+    setMessage(null);
+    try {
+      const response = await fetch(
+        `/api/admin/admins/${encodeURIComponent(admin.id)}/masjid-management`,
+        {
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ enabled }),
+        },
+      );
+      const result = await readApiResponse<{ error?: string }>(response);
+      if (!response.ok) {
+        throw new Error(result.error ?? "Masjid-management access could not be updated.");
+      }
+      await refreshOverview();
+      setMessage({
+        kind: "success",
+        text: `${admin.email} ${enabled ? "can now" : "can no longer"} manage masjids.`,
+      });
+    } catch (error) {
+      setMessage({
+        kind: "error",
+        text:
+          error instanceof Error
+            ? error.message
+            : "Masjid-management access could not be updated.",
+      });
+    } finally {
+      setAccessBusyId(null);
+    }
+  }
+
+  async function changeMosqueAssignment(
+    admin: SafeAdmin,
+    mosqueId: string,
+    assigned: boolean,
+  ) {
+    const mosque = overview.mosques.find((item) => item.id === mosqueId);
+    if (!mosque) return;
+    const busyKey = `${admin.id}:${mosqueId}`;
+    setAccessBusyId(busyKey);
+    setMessage(null);
+    try {
+      const response = await fetch(
+        `/api/admin/admins/${encodeURIComponent(admin.id)}/masjids/${encodeURIComponent(mosqueId)}`,
+        { method: assigned ? "PUT" : "DELETE" },
+      );
+      const result = await readApiResponse<{ error?: string }>(response);
+      if (!response.ok) {
+        throw new Error(result.error ?? "The masjid assignment could not be updated.");
+      }
+      await refreshOverview();
+      setMessage({
+        kind: "success",
+        text: `${mosque.name} was ${assigned ? "assigned to" : "removed from"} ${admin.email}.`,
+      });
+    } catch (error) {
+      setMessage({
+        kind: "error",
+        text:
+          error instanceof Error
+            ? error.message
+            : "The masjid assignment could not be updated.",
+      });
+    } finally {
+      setAccessBusyId(null);
+    }
+  }
+
   async function createAdmin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!emailInput.current?.checkValidity()) {
@@ -323,9 +396,47 @@ export function ManagementDashboard({
                     : "Administrator"}
                 </span>
                 {admin.role === "admin" ? (
-                  <span className="admin-access-state">
-                    {admin.active ? "Access active" : "Access revoked"}
-                  </span>
+                  <>
+                    <span className="admin-access-state">
+                      {admin.active ? "Access active" : "Access revoked"}
+                    </span>
+                    <fieldset className="admin-permission-fields">
+                      <legend>Masjid permissions</legend>
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={admin.canManageMasjids}
+                          disabled={accessBusyId !== null}
+                          onChange={() => void changeMosqueManagement(admin)}
+                        />
+                        Create, edit and archive masjids
+                      </label>
+                      {overview.mosques
+                        .filter((mosque) => mosque.active)
+                        .map((mosque) => {
+                          const assigned = admin.mosques.some(
+                            (item) => item.id === mosque.id,
+                          );
+                          return (
+                            <label key={mosque.id}>
+                              <input
+                                type="checkbox"
+                                checked={assigned}
+                                disabled={accessBusyId !== null}
+                                onChange={(event) =>
+                                  void changeMosqueAssignment(
+                                    admin,
+                                    mosque.id,
+                                    event.target.checked,
+                                  )
+                                }
+                              />
+                              Edit {mosque.name} timetable
+                            </label>
+                          );
+                        })}
+                    </fieldset>
+                  </>
                 ) : null}
               </div>
               {admin.role === "admin" ? (

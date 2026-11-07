@@ -1,8 +1,9 @@
 # Masjid Prayer Times
 
-A mobile-first Next.js PWA for one mosque. Visitors can see jamaat times without
-an account and opt in to Web Push alerts. Only authorized editors
-can sign in and publish timetable changes.
+A mobile-first Next.js PWA for multiple mosques. Visitors can select a default
+mosque, see jamaat times without an account and independently opt in to each
+mosque's Web Push alerts. Only authorized editors can sign in and publish
+timetable changes for their assigned mosques.
 
 Engineering conventions are indexed in the [engineering handbook](docs/README.md).
 
@@ -11,7 +12,7 @@ Engineering conventions are indexed in the [engineering handbook](docs/README.md
 - Next.js App Router and TypeScript
 - Supabase Postgres, Auth and row-level security
 - Standards-based Web Push with VAPID keys
-- Installable PWA with an offline copy of the last public timetable
+- Installable PWA with mosque-scoped offline copies of visited public timetables
 
 ## Local setup
 

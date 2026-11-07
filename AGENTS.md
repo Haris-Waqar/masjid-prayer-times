@@ -1,8 +1,10 @@
 # Repository guidance
 
-Build a calm, accessible single-mosque prayer timetable. Public reading never
-requires an account. All writes require both a signed-in identity and explicit
-server-side authorization through the Supabase `admin_members` table.
+Build a calm, accessible multi-mosque prayer timetable. Public reading and a
+browser-local default mosque never require an account. All writes require both
+a signed-in identity and explicit server-side authorization through the Supabase
+`admin_members` table and, where applicable, a mosque assignment or delegated
+management capability.
 
 ## Architecture
 

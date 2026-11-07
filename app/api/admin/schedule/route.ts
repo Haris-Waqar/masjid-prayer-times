@@ -1,7 +1,13 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { getAdminSession } from "@/lib/admin";
-import { canEditSchedule } from "@/lib/admin-policy";
-import { PRAYER_SCHEDULE_CACHE_TAG } from "@/lib/cache-tags";
+import {
+  canEditMosque,
+  canEditSchedule,
+  type AdminAccess,
+  type AdminMosque,
+} from "@/lib/admin-policy";
+import { prayerScheduleCacheTag } from "@/lib/cache-tags";
+import { mosquePublicPath } from "@/lib/mosques";
 import {
   SCHEDULE_PRAYERS,
   dateInTimezone,
@@ -12,24 +18,37 @@ import {
   type PrayerTime,
 } from "@/lib/prayers";
 import { notifyPrayerChanges } from "@/lib/push";
-import { getPrayerSchedule, getSettings } from "@/lib/schedule";
+import { getPrayerSchedule } from "@/lib/schedule";
 import {
   createAdminClient,
   SupabaseAdminConfigurationError,
 } from "@/lib/supabase/admin";
 
 type ScheduleInput = {
+  mosqueId?: string;
   date?: string;
   times?: Array<{ prayer?: string; jamaat?: string }>;
 };
 
-async function validateEffectiveDate(date: string | undefined) {
+function requestedMosque(
+  access: AdminAccess,
+  mosqueId: string | null | undefined,
+): AdminMosque | null {
+  const mosque = mosqueId
+    ? access.assignedMosques.find((item) => item.id === mosqueId)
+    : access.assignedMosques[0];
+  return mosque && canEditMosque(access, mosque.id) ? mosque : null;
+}
+
+function validateEffectiveDate(
+  date: string | undefined,
+  mosque: AdminMosque,
+) {
   if (!date || !isScheduleDate(date)) {
     return "Choose a valid effective date.";
   }
 
-  const settings = await getSettings();
-  const today = dateInTimezone(settings.timezone);
+  const today = dateInTimezone(mosque.timezone);
   return date < today ? "Choose today or a future effective date." : null;
 }
 
@@ -37,25 +56,33 @@ async function loadSchedule(request: Request) {
   const { access, user } = await getAdminSession();
   if (!user)
     return Response.json({ error: "Sign in is required." }, { status: 401 });
-  if (!canEditSchedule(access))
+  if (!canEditSchedule(access) || !access)
     return Response.json(
       { error: "Authorized access is required." },
       { status: 403 },
     );
 
+  const url = new URL(request.url);
+  const mosque = requestedMosque(access, url.searchParams.get("mosqueId"));
+  if (!mosque) {
+    return Response.json(
+      { error: "Access to this mosque is required." },
+      { status: 403 },
+    );
+  }
+
   // No `date` param means "today" in the masjid timezone, so the editor can
   // bootstrap its initial state with a single client fetch and without having
   // to know the timezone itself.
-  let date = new URL(request.url).searchParams.get("date") ?? undefined;
+  let date = url.searchParams.get("date") ?? undefined;
   if (!date) {
-    const settings = await getSettings();
-    date = dateInTimezone(settings.timezone);
+    date = dateInTimezone(mosque.timezone);
   }
-  const dateError = await validateEffectiveDate(date);
+  const dateError = validateEffectiveDate(date, mosque);
   if (dateError) return Response.json({ error: dateError }, { status: 400 });
 
-  const schedule = await getPrayerSchedule(date);
-  return Response.json({ date, times: schedule.times });
+  const schedule = await getPrayerSchedule(mosque.id, date);
+  return Response.json({ date, times: schedule.times, mosque });
 }
 
 async function publishSchedule(request: Request) {
@@ -69,7 +96,15 @@ async function publishSchedule(request: Request) {
     );
 
   const input = (await request.json()) as ScheduleInput;
-  const dateError = await validateEffectiveDate(input.date);
+  const mosque = requestedMosque(access, input.mosqueId);
+  if (!mosque) {
+    return Response.json(
+      { error: "Access to this mosque is required." },
+      { status: 403 },
+    );
+  }
+
+  const dateError = validateEffectiveDate(input.date, mosque);
   if (dateError) return Response.json({ error: dateError }, { status: 400 });
   const effectiveDate = input.date!;
   if (
@@ -109,6 +144,7 @@ async function publishSchedule(request: Request) {
 
   const supabase = createAdminClient();
   const { data, error } = await supabase.rpc("publish_prayer_schedule", {
+    p_mosque_id: mosque.id,
     p_date: effectiveDate,
     p_times: normalized.map((item) => ({
       prayer: item.prayer,
@@ -138,9 +174,9 @@ async function publishSchedule(request: Request) {
       isTime(item.newJamaat),
   );
 
-  const notified = await notifyPrayerChanges(effectiveDate, changes);
-  revalidateTag(PRAYER_SCHEDULE_CACHE_TAG, { expire: 0 });
-  revalidatePath("/", "page");
+  const notified = await notifyPrayerChanges(mosque, effectiveDate, changes);
+  revalidateTag(prayerScheduleCacheTag(mosque.id), { expire: 0 });
+  revalidatePath(mosquePublicPath(mosque.slug), "page");
   return Response.json({ ok: true, changed: changes.length, notified });
 }
 

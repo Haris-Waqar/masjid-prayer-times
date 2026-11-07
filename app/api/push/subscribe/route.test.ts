@@ -6,6 +6,7 @@ import { DELETE, POST } from "@/app/api/push/subscribe/route";
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: vi.fn() }));
 
 const endpoint = "https://fcm.googleapis.com/fcm/send/device";
+const mosqueId = "11111111-1111-4111-8111-111111111111";
 const clientAddress = "203.0.113.10";
 
 function rateKey(secret: string, address: string) {
@@ -14,6 +15,7 @@ function rateKey(secret: string, address: string) {
 
 function subscription(overrides: Record<string, unknown> = {}) {
   return {
+    mosqueId,
     endpoint,
     keys: { p256dh: "p256dh-key", auth: "auth-key" },
     ...overrides,
@@ -41,12 +43,22 @@ function remove(body: unknown, headers: Record<string, string> = {}) {
 
 describe("POST /api/push/subscribe", () => {
   const rpc = vi.fn();
+  const maybeSingle = vi.fn();
+  const secondEq = vi.fn();
+  const firstEq = vi.fn();
+  const select = vi.fn();
+  const from = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubEnv("PUSH_RATE_LIMIT_SECRET", "rate-secret");
     rpc.mockResolvedValue({ error: null });
-    vi.mocked(createAdminClient).mockReturnValue({ rpc } as never);
+    maybeSingle.mockResolvedValue({ data: { id: mosqueId }, error: null });
+    secondEq.mockReturnValue({ maybeSingle });
+    firstEq.mockReturnValue({ eq: secondEq });
+    select.mockReturnValue({ eq: firstEq });
+    from.mockReturnValue({ select });
+    vi.mocked(createAdminClient).mockReturnValue({ from, rpc } as never);
   });
 
   it("registers an allowed subscription and defaults the language to English", async () => {
@@ -55,6 +67,7 @@ describe("POST /api/push/subscribe", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ ok: true });
     expect(rpc).toHaveBeenCalledWith("register_push_subscription", {
+      p_mosque_id: mosqueId,
       p_endpoint: endpoint,
       p_p256dh: "p256dh-key",
       p_auth: "auth-key",
@@ -225,41 +238,56 @@ describe("POST /api/push/subscribe", () => {
       error: "Could not save this device.",
     });
   });
+
+  it("rejects an inactive mosque before registering the endpoint", async () => {
+    maybeSingle.mockResolvedValueOnce({ data: null, error: null });
+
+    const response = await POST(post(subscription()));
+
+    expect(response.status).toBe(404);
+    await expect(response.json()).resolves.toEqual({
+      error: "Mosque is unavailable.",
+    });
+    expect(rpc).not.toHaveBeenCalled();
+  });
 });
 
 describe("DELETE /api/push/subscribe", () => {
-  const deleteEq = vi.fn();
+  const mosqueEq = vi.fn();
+  const endpointEq = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
-    deleteEq.mockResolvedValue({ error: null });
+    mosqueEq.mockResolvedValue({ error: null });
+    endpointEq.mockReturnValue({ eq: mosqueEq });
     vi.mocked(createAdminClient).mockReturnValue({
       from: vi.fn().mockReturnValue({
-        delete: vi.fn().mockReturnValue({ eq: deleteEq }),
+        delete: vi.fn().mockReturnValue({ eq: endpointEq }),
       }),
     } as never);
   });
 
   it("removes one allowed endpoint", async () => {
-    const response = await DELETE(remove({ endpoint }));
+    const response = await DELETE(remove({ mosqueId, endpoint }));
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ ok: true });
-    expect(deleteEq).toHaveBeenCalledWith("endpoint", endpoint);
+    expect(endpointEq).toHaveBeenCalledWith("endpoint", endpoint);
+    expect(mosqueEq).toHaveBeenCalledWith("mosque_id", mosqueId);
   });
 
   it("rejects an invalid endpoint and a database failure", async () => {
     const invalid = await DELETE(
-      remove({ endpoint: "https://example.com/push" }),
+      remove({ mosqueId, endpoint: "https://example.com/push" }),
     );
     expect(invalid.status).toBe(400);
-    expect(deleteEq).not.toHaveBeenCalled();
+    expect(endpointEq).not.toHaveBeenCalled();
 
-    deleteEq.mockResolvedValueOnce({ error: { message: "unavailable" } });
-    const failed = await DELETE(remove({ endpoint }));
+    mosqueEq.mockResolvedValueOnce({ error: { message: "unavailable" } });
+    const failed = await DELETE(remove({ mosqueId, endpoint }));
     expect(failed.status).toBe(500);
     await expect(failed.json()).resolves.toEqual({
-      error: "Could not remove this device.",
+      error: "Could not disable alerts for this mosque.",
     });
   });
 });

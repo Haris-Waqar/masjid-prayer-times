@@ -42,7 +42,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -57,7 +58,8 @@ a {
 
 button:focus-visible,
 a:focus-visible,
-input:focus-visible {
+input:focus-visible,
+select:focus-visible {
   outline: 3px solid rgb(45 118 109 / 35%);
   outline-offset: 3px;
 }
@@ -130,6 +132,226 @@ input:focus-visible {
   margin: 0 auto;
   max-width: 1120px;
   padding: 22px 0;
+}
+
+.mosque-toolbar {
+  align-items: flex-end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-between;
+  margin: -8px auto 18px;
+  max-width: 1120px;
+}
+
+.mosque-toolbar label {
+  display: grid;
+  flex: 1 1 260px;
+  gap: 5px;
+  max-width: 520px;
+}
+
+.mosque-toolbar label > span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.mosque-toolbar select {
+  appearance: none;
+  background:
+    linear-gradient(45deg, transparent 50%, var(--forest) 50%) calc(100% - 18px)
+      calc(50% - 2px) / 5px 5px no-repeat,
+    linear-gradient(135deg, var(--forest) 50%, transparent 50%) calc(100% - 13px)
+      calc(50% - 2px) / 5px 5px no-repeat,
+    var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--ink);
+  min-height: 44px;
+  padding: 0 38px 0 12px;
+  width: 100%;
+}
+
+.default-mosque-control {
+  display: grid;
+  gap: 5px;
+}
+
+.default-toolbar-button {
+  background: var(--card);
+  border: 1px solid var(--forest);
+  border-radius: 12px;
+  color: var(--forest);
+  cursor: pointer;
+  font-weight: 700;
+  min-height: 44px;
+  padding: 0 14px;
+}
+
+.default-toolbar-button:disabled {
+  border-color: var(--line);
+  color: var(--muted);
+  cursor: default;
+}
+
+.preference-status,
+.preference-error {
+  font-size: 0.72rem;
+  line-height: 1.35;
+  max-width: 320px;
+}
+
+.preference-status {
+  color: var(--jade);
+}
+
+.preference-error {
+  color: var(--danger);
+}
+
+.mosque-chooser-shell {
+  margin: 0 auto;
+  max-width: 920px;
+  min-height: 100vh;
+  padding: 28px 20px 48px;
+}
+
+.chooser-header {
+  align-items: center;
+  color: var(--forest);
+  display: flex;
+  font-size: 1.05rem;
+  font-weight: 700;
+  gap: 12px;
+  margin-bottom: 30px;
+}
+
+.chooser-header p {
+  margin: 0;
+}
+
+.chooser-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+  padding: clamp(22px, 4vw, 42px);
+}
+
+.chooser-card > h1 {
+  color: var(--forest);
+  font-size: clamp(2rem, 8vw, 3.7rem);
+  letter-spacing: -0.04em;
+  line-height: 1;
+  margin: 8px 0 14px;
+}
+
+.chooser-lede {
+  color: var(--muted);
+  margin: 0;
+  max-width: 660px;
+}
+
+.mosque-choice-list {
+  display: grid;
+  gap: 12px;
+  list-style: none;
+  margin: 30px 0 0;
+  padding: 0;
+}
+
+.mosque-choice-list > li {
+  align-items: center;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+
+.mosque-choice-list h2,
+.mosque-choice-list p {
+  margin: 0;
+}
+
+.mosque-choice-list h2 {
+  color: var(--forest);
+  font-size: 1.08rem;
+}
+
+.mosque-choice-list h2 a {
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+.mosque-choice-list p {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-top: 3px;
+}
+
+.mosque-choice-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.mosque-choice-actions .primary-button {
+  margin: 0;
+}
+
+.mosque-open-link,
+.primary-link {
+  align-items: center;
+  display: inline-flex;
+  font-weight: 700;
+  min-height: 44px;
+  text-underline-offset: 3px;
+}
+
+.primary-link {
+  background: var(--forest);
+  border-radius: 14px;
+  color: var(--white);
+  margin-top: 24px;
+  padding: 0 18px;
+  text-decoration: none;
+}
+
+.chooser-empty {
+  background: var(--paper);
+  border: 1px dashed var(--line);
+  border-radius: 16px;
+  margin-top: 30px;
+  padding: 22px;
+}
+
+.chooser-empty h2,
+.chooser-empty p {
+  margin: 0;
+}
+
+.chooser-empty h2 {
+  color: var(--forest);
+  font-size: 1.05rem;
+}
+
+.chooser-empty p {
+  color: var(--muted);
+  margin-top: 5px;
+}
+
+.preference-cleanup-status {
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin: 20px 0 0;
+}
+
+.unavailable-card {
+  margin-top: clamp(40px, 10vh, 120px);
 }
 
 .brand-mark {
@@ -1575,6 +1797,126 @@ footer a {
   min-height: 1px;
 }
 
+.admin-mosque-picker {
+  display: grid;
+  gap: 7px;
+  margin-bottom: 20px;
+  max-width: 420px;
+}
+
+.admin-mosque-picker label,
+.mosque-form label {
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.admin-mosque-picker select,
+.mosque-form input {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  color: var(--ink);
+  min-height: 44px;
+  padding: 0 12px;
+  width: 100%;
+}
+
+.mosque-management-card {
+  margin-bottom: 34px;
+}
+
+.mosque-management-card h2 {
+  color: var(--forest);
+  margin: 4px 0 18px;
+}
+
+.mosque-form {
+  display: grid;
+  gap: 8px;
+}
+
+.mosque-form small {
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.mosque-form .primary-button,
+.mosque-form .secondary-button {
+  margin-top: 12px;
+}
+
+.mosque-management-list {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.mosque-form-heading,
+.mosque-form-heading > div,
+.mosque-form-actions {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.mosque-form-heading {
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.mosque-form-heading strong {
+  overflow-wrap: anywhere;
+}
+
+.mosque-form-heading a {
+  color: var(--jade);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.mosque-form-actions > * {
+  flex: 1;
+}
+
+.archived-badge {
+  background: #f7e5e2;
+  border-radius: 999px;
+  color: var(--danger);
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 6px 10px;
+}
+
+.admin-permission-fields {
+  border: 0;
+  display: grid;
+  gap: 7px;
+  margin: 14px 0 0;
+  padding: 0;
+}
+
+.admin-permission-fields legend {
+  font-size: 0.76rem;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.admin-permission-fields label {
+  align-items: flex-start;
+  display: flex;
+  font-size: 0.78rem;
+  gap: 8px;
+  line-height: 1.4;
+}
+
+.admin-permission-fields input {
+  flex: none;
+  height: 18px;
+  margin: 0;
+  width: 18px;
+}
+
 .temporary-password-label {
   display: block;
   margin-top: 20px;
@@ -1749,6 +2091,14 @@ footer a {
     padding: 30px 0;
   }
 
+  .mosque-choice-list > li {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .mosque-choice-actions {
+    justify-content: flex-end;
+  }
+
   .brand-mark {
     height: 52px;
     width: 52px;
@@ -1829,6 +2179,7 @@ footer a {
   }
 
   .site-header,
+  .mosque-toolbar,
   .page-grid,
   footer,
   .alert-banner {
@@ -1901,6 +2252,16 @@ footer a {
   .admin-member-actions,
   .access-button {
     width: 100%;
+  }
+
+  .mosque-management-list {
+    grid-template-columns: 1fr;
+  }
+
+  .mosque-form-actions,
+  .mosque-form-heading {
+    align-items: stretch;
+    flex-direction: column;
   }
 }
 

@@ -1,6 +1,10 @@
 import { getAdminSession } from "@/lib/admin";
 import { logAdminFailure, noStoreJson } from "@/lib/admin-api";
-import { canEditSchedule, canManageAdmins } from "@/lib/admin-policy";
+import {
+  canEditSchedule,
+  canManageAdmins,
+  canManageMasjids,
+} from "@/lib/admin-policy";
 
 export async function GET(request: Request) {
   try {
@@ -22,6 +26,8 @@ export async function GET(request: Request) {
       role: access.role,
       canEdit: canEditSchedule(access),
       canManage: canManageAdmins(access),
+      canManageMasjids: canManageMasjids(access),
+      mosques: access.assignedMosques,
       passwordSetupRequired: access.passwordSetupRequired,
     });
   } catch (error) {

@@ -14,12 +14,20 @@ import {
 import { PRAYER_URDU, publicCopy } from "@/lib/ui-copy";
 
 type Props = {
+  mosqueId: string;
+  mosqueName: string;
   initialDate: string;
   initialTimes: PrayerTime[];
   editorEmail: string;
 };
 
-export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
+export function AdminEditor({
+  mosqueId,
+  mosqueName,
+  initialDate,
+  initialTimes,
+  editorEmail,
+}: Props) {
   const timeInputs = useRef<Array<HTMLInputElement | null>>([]);
   const dateRequest = useRef<AbortController | null>(null);
   const [date, setDate] = useState(initialDate);
@@ -72,7 +80,7 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
 
     try {
       const response = await fetch(
-        `/api/admin/schedule?date=${encodeURIComponent(nextDate)}`,
+        `/api/admin/schedule?mosqueId=${encodeURIComponent(mosqueId)}&date=${encodeURIComponent(nextDate)}`,
         { signal: controller.signal },
       );
       const result = await readApiResponse<{ error?: string; times?: PrayerTime[] }>(response);
@@ -130,7 +138,7 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
       const response = await fetch("/api/admin/schedule", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ date, times }),
+        body: JSON.stringify({ mosqueId, date, times }),
       });
       const result = await readApiResponse<{
         error?: string;
@@ -161,6 +169,7 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
 
   return (
     <section className="admin-card" aria-busy={loadingDate || saving}>
+      <p className="section-kicker">Editing {mosqueName}</p>
       <div className="form-date">
         <label htmlFor="effective-date">Effective date</label>
         <input
@@ -297,6 +306,7 @@ export function AdminEditor({ initialDate, initialTimes, editorEmail }: Props) {
         <p className="dialog-date">
           <CalendarDays size={17} aria-hidden="true" /> From {displayScheduleDate(date)}
         </p>
+        <p className="dialog-copy">Masjid: {mosqueName}</p>
         <ol className="review-list">
           {times.map((item, index) => (
             <li key={item.prayer}>

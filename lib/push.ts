@@ -8,9 +8,27 @@ import {
   notificationForLocale,
   type PrayerChange,
 } from "@/lib/prayer-change-notification";
+import { mosquePublicPath } from "@/lib/mosques";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export async function notifyPrayerChanges(date: string, changes: PrayerChange[]) {
+export type MosqueAlertTarget = {
+  id: string;
+  slug: string;
+  name: string;
+};
+
+type SavedSubscription = {
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  locale: string | null;
+};
+
+export async function notifyPrayerChanges(
+  mosque: MosqueAlertTarget,
+  date: string,
+  changes: PrayerChange[],
+) {
   const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   const privateKey = process.env.VAPID_PRIVATE_KEY;
   const subject = process.env.VAPID_SUBJECT;
@@ -18,19 +36,42 @@ export async function notifyPrayerChanges(date: string, changes: PrayerChange[])
 
   const supabase = createAdminClient();
   const vapid: VapidKeys = { subject, publicKey, privateKey };
+  const mosqueUrl = mosquePublicPath(mosque.slug);
 
   let delivered = 0;
   const pageSize = 500;
   const batchSize = 20;
   for (let offset = 0; ; offset += pageSize) {
-    const { data: subscriptions, error } = await supabase
-      .from("push_subscriptions")
-      .select("endpoint, p256dh, auth, locale")
+    const { data: associations, error: associationError } = await supabase
+      .from("push_subscription_mosques")
+      .select("endpoint")
+      .eq("mosque_id", mosque.id)
       .order("endpoint")
       .range(offset, offset + pageSize - 1);
-    if (error) throw error;
+    if (associationError) throw associationError;
 
-    const page = subscriptions ?? [];
+    const associationPage = associations ?? [];
+    const endpoints = associationPage.map((item) => item.endpoint);
+    let page: SavedSubscription[] = [];
+    if (endpoints.length > 0) {
+      const { data: subscriptions, error: subscriptionError } = await supabase
+        .from("push_subscriptions")
+        .select("endpoint, p256dh, auth, locale")
+        .in("endpoint", endpoints);
+      if (subscriptionError) throw subscriptionError;
+
+      const byEndpoint = new Map(
+        ((subscriptions ?? []) as SavedSubscription[]).map((saved) => [
+          saved.endpoint,
+          saved,
+        ]),
+      );
+      page = endpoints.flatMap((endpoint) => {
+        const saved = byEndpoint.get(endpoint);
+        return saved ? [saved] : [];
+      });
+    }
+
     for (let index = 0; index < page.length; index += batchSize) {
       const batch = page.slice(index, index + batchSize);
       await Promise.allSettled(batch.map(async (saved) => {
@@ -43,10 +84,10 @@ export async function notifyPrayerChanges(date: string, changes: PrayerChange[])
       const payload = await buildPushPayload(
         {
           data: JSON.stringify({
-            title: notification.title,
+            title: `${mosque.name} · ${notification.title}`,
             body: notification.body,
-            url: "/",
-            tag: `prayer-change-${date}`,
+            url: mosqueUrl,
+            tag: `prayer-change-${mosque.id}-${date}`,
           }),
           options: { ttl: 60 * 60 * 6 },
         },
@@ -65,7 +106,7 @@ export async function notifyPrayerChanges(date: string, changes: PrayerChange[])
       }
       }));
     }
-    if (page.length < pageSize) break;
+    if (associationPage.length < pageSize) break;
   }
 
   return delivered;

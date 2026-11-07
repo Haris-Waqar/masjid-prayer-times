@@ -11,6 +11,11 @@ vi.mock("@block65/webcrypto-web-push", () => ({
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: vi.fn() }));
 
 const date = "2026-10-25";
+const mosque = {
+  id: "11111111-1111-4111-8111-111111111111",
+  slug: "fazaia-town",
+  name: "Jamia Masjid Fazaia Housing",
+};
 const changes: PrayerChange[] = [
   { prayer: "Fajr", oldJamaat: "05:30", newJamaat: "05:45" },
 ];
@@ -28,18 +33,34 @@ function mockSubscriptions(
   pages: Array<ReturnType<typeof subscription>[] | { error: { message: string } }>,
 ) {
   let pageIndex = 0;
+  let currentSubscriptions: ReturnType<typeof subscription>[] = [];
   const deleteEq = vi.fn().mockResolvedValue({ error: null });
   const range = vi.fn(async () => {
     const page = pages[pageIndex] ?? [];
     pageIndex += 1;
     if (!Array.isArray(page)) return { data: null, error: page.error };
-    return { data: page, error: null };
+    currentSubscriptions = page;
+    return {
+      data: page.map(({ endpoint }) => ({ endpoint })),
+      error: null,
+    };
   });
-  const from = vi.fn().mockReturnValue({
-    select: vi.fn().mockReturnValue({
-      order: vi.fn().mockReturnValue({ range }),
-    }),
-    delete: vi.fn().mockReturnValue({ eq: deleteEq }),
+  const from = vi.fn((table: string) => {
+    if (table === "push_subscription_mosques") {
+      return {
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            order: vi.fn().mockReturnValue({ range }),
+          }),
+        }),
+      };
+    }
+    return {
+      select: vi.fn().mockReturnValue({
+        in: vi.fn(async () => ({ data: currentSubscriptions, error: null })),
+      }),
+      delete: vi.fn().mockReturnValue({ eq: deleteEq }),
+    };
   });
   vi.mocked(createAdminClient).mockReturnValue({ from } as never);
   return { deleteEq, range };
@@ -69,7 +90,7 @@ describe("notifyPrayerChanges", () => {
   });
 
   it("skips delivery when nothing changed", async () => {
-    await expect(notifyPrayerChanges(date, [])).resolves.toBe(0);
+    await expect(notifyPrayerChanges(mosque, date, [])).resolves.toBe(0);
     expect(createAdminClient).not.toHaveBeenCalled();
     expect(fetch).not.toHaveBeenCalled();
   });
@@ -77,7 +98,7 @@ describe("notifyPrayerChanges", () => {
   it("skips delivery when VAPID credentials are incomplete", async () => {
     vi.stubEnv("VAPID_PRIVATE_KEY", "");
 
-    await expect(notifyPrayerChanges(date, changes)).resolves.toBe(0);
+    await expect(notifyPrayerChanges(mosque, date, changes)).resolves.toBe(0);
     expect(createAdminClient).not.toHaveBeenCalled();
   });
 
@@ -85,7 +106,7 @@ describe("notifyPrayerChanges", () => {
     const saved = subscription("https://fcm.googleapis.com/fcm/send/kept", "ur");
     mockSubscriptions([[saved]]);
 
-    await expect(notifyPrayerChanges(date, changes)).resolves.toBe(1);
+    await expect(notifyPrayerChanges(mosque, date, changes)).resolves.toBe(1);
 
     expect(buildPushPayload).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -108,11 +129,11 @@ describe("notifyPrayerChanges", () => {
       tag: string;
       url: string;
     };
-    expect(payload.title).toBe("جماعت کا وقت تبدیل");
+    expect(payload.title).toBe(`${mosque.name} · جماعت کا وقت تبدیل`);
     expect(payload.body).toContain("5:30 AM");
     expect(payload.body).toContain("5:45 AM");
-    expect(payload.tag).toBe(`prayer-change-${date}`);
-    expect(payload.url).toBe("/");
+    expect(payload.tag).toBe(`prayer-change-${mosque.id}-${date}`);
+    expect(payload.url).toBe("/masjids/fazaia-town");
     expect(fetch).toHaveBeenCalledWith(
       saved.endpoint,
       expect.objectContaining({ redirect: "error" }),
@@ -131,7 +152,7 @@ describe("notifyPrayerChanges", () => {
       return new Response(null, { status: 500 });
     });
 
-    await expect(notifyPrayerChanges(date, changes)).resolves.toBe(0);
+    await expect(notifyPrayerChanges(mosque, date, changes)).resolves.toBe(0);
     expect(deleteEq).toHaveBeenCalledTimes(2);
     expect(deleteEq).toHaveBeenCalledWith("endpoint", gone.endpoint);
     expect(deleteEq).toHaveBeenCalledWith("endpoint", missing.endpoint);
@@ -140,12 +161,12 @@ describe("notifyPrayerChanges", () => {
 
   it("stops after a short page and surfaces a subscription read failure", async () => {
     const { range } = mockSubscriptions([[]]);
-    await expect(notifyPrayerChanges(date, changes)).resolves.toBe(0);
+    await expect(notifyPrayerChanges(mosque, date, changes)).resolves.toBe(0);
     expect(range).toHaveBeenCalledTimes(1);
     expect(range).toHaveBeenCalledWith(0, 499);
 
     mockSubscriptions([{ error: { message: "subscriptions unavailable" } }]);
-    await expect(notifyPrayerChanges(date, changes)).rejects.toEqual({
+    await expect(notifyPrayerChanges(mosque, date, changes)).rejects.toEqual({
       message: "subscriptions unavailable",
     });
   });

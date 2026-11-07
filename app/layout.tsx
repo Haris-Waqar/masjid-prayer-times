@@ -17,14 +17,14 @@ const notoNastaliq = Noto_Nastaliq_Urdu({
 });
 
 export const metadata: Metadata = {
-  title: "Jamia Masjid Fazaia Housing · Jamaat Times",
-  description: "Current jamaat times for Jamia Masjid Fazaia Housing, Lahore.",
-  applicationName: "Fazaia Jamaat Times",
+  title: "Masjid Prayer Times",
+  description: "Current jamaat times for participating masjids.",
+  applicationName: "Masjid Prayer Times",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Fazaia Jamaat Times",
+    title: "Masjid Prayer Times",
   },
   icons: {
     icon: "/favicon.svg",

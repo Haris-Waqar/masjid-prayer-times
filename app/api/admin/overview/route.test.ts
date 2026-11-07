@@ -16,9 +16,12 @@ const overview = {
       email: "boss@example.org",
       role: "super_admin" as const,
       active: true,
+      canManageMasjids: true,
+      mosques: [],
       createdAt: "2026-01-01T00:00:00.000Z",
     },
   ],
+  mosques: [],
   statistics: {
     totalDevices: 4,
     englishDevices: 3,

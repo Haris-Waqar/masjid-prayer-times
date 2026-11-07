@@ -3,7 +3,7 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { getAdminSession } from "@/lib/admin";
 import { notifyPrayerChanges } from "@/lib/push";
 import type { PrayerTime } from "@/lib/prayers";
-import { getPrayerSchedule, getSettings } from "@/lib/schedule";
+import { getPrayerSchedule } from "@/lib/schedule";
 import {
   createAdminClient,
   SupabaseAdminConfigurationError,
@@ -14,7 +14,6 @@ vi.mock("@/lib/admin", () => ({ getAdminSession: vi.fn() }));
 vi.mock("@/lib/push", () => ({ notifyPrayerChanges: vi.fn() }));
 vi.mock("@/lib/schedule", () => ({
   getPrayerSchedule: vi.fn(),
-  getSettings: vi.fn(),
 }));
 vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
@@ -43,6 +42,13 @@ const validTimes: PrayerTime[] = [
   { prayer: "Jumu'ah", jamaat: "13:45" },
 ];
 const futureDate = "2099-10-24";
+const mosque = {
+  id: "11111111-1111-4111-8111-111111111111",
+  slug: "fazaia-town",
+  name: "Jamia Masjid Fazaia Housing",
+  location: "Block H, Lahore",
+  timezone: "Asia/Karachi",
+};
 const adminSession = {
   user: { id: "user-1", email: "imam@example.org" },
   access: {
@@ -50,6 +56,9 @@ const adminSession = {
     email: "imam@example.org",
     membershipId: "member-1",
     role: "admin",
+    canManageMasjids: false,
+    assignedMosqueIds: [mosque.id],
+    assignedMosques: [mosque],
     passwordSetupRequired: false,
   },
 } as never;
@@ -66,16 +75,13 @@ describe("POST /api/admin/schedule", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(getAdminSession).mockResolvedValue(adminSession);
-    vi.mocked(getSettings).mockResolvedValue({
-      timezone: "Asia/Karachi",
-    } as never);
   });
 
   it("rejects unauthenticated requests before accessing the database", async () => {
     vi.mocked(getAdminSession).mockResolvedValue({ user: null, access: null });
 
     const response = await POST(
-      request({ date: futureDate, times: validTimes }),
+      request({ mosqueId: mosque.id, date: futureDate, times: validTimes }),
     );
 
     expect(response.status).toBe(401);
@@ -91,7 +97,7 @@ describe("POST /api/admin/schedule", () => {
     });
 
     const response = await POST(
-      request({ date: futureDate, times: validTimes }),
+      request({ mosqueId: mosque.id, date: futureDate, times: validTimes }),
     );
 
     expect(response.status).toBe(503);
@@ -110,7 +116,7 @@ describe("POST /api/admin/schedule", () => {
     vi.mocked(notifyPrayerChanges).mockResolvedValue(3);
 
     const response = await POST(
-      request({ date: futureDate, times: validTimes }),
+      request({ mosqueId: mosque.id, date: futureDate, times: validTimes }),
     );
 
     expect(response.status).toBe(200);
@@ -120,6 +126,7 @@ describe("POST /api/admin/schedule", () => {
       notified: 3,
     });
     expect(rpc).toHaveBeenCalledWith("publish_prayer_schedule", {
+      p_mosque_id: mosque.id,
       p_date: futureDate,
       p_times: validTimes.map((time) => ({
         prayer: time.prayer,
@@ -127,13 +134,18 @@ describe("POST /api/admin/schedule", () => {
       })),
       p_changed_by: "imam@example.org",
     });
-    expect(notifyPrayerChanges).toHaveBeenCalledWith(futureDate, [
-      { prayer: "Asr", oldJamaat: "16:15", newJamaat: "16:00" },
-    ]);
-    expect(revalidateTag).toHaveBeenCalledWith("prayer-schedules", {
+    expect(notifyPrayerChanges).toHaveBeenCalledWith(
+      mosque,
+      futureDate,
+      [{ prayer: "Asr", oldJamaat: "16:15", newJamaat: "16:00" }],
+    );
+    expect(revalidateTag).toHaveBeenCalledWith(`prayer-schedules:${mosque.id}`, {
       expire: 0,
     });
-    expect(revalidatePath).toHaveBeenCalledWith("/", "page");
+    expect(revalidatePath).toHaveBeenCalledWith(
+      "/masjids/fazaia-town",
+      "page",
+    );
   });
 
   it("normalizes Supabase time values before publishing", async () => {
@@ -146,11 +158,12 @@ describe("POST /api/admin/schedule", () => {
     }));
 
     const response = await POST(
-      request({ date: futureDate, times: databaseTimes }),
+      request({ mosqueId: mosque.id, date: futureDate, times: databaseTimes }),
     );
 
     expect(response.status).toBe(200);
     expect(rpc).toHaveBeenCalledWith("publish_prayer_schedule", {
+      p_mosque_id: mosque.id,
       p_date: futureDate,
       p_times: [
         { prayer: "Fajr", jamaat: "05:30" },
@@ -166,7 +179,7 @@ describe("POST /api/admin/schedule", () => {
 
   it("rejects past effective dates before publishing", async () => {
     const response = await POST(
-      request({ date: "2000-01-01", times: validTimes }),
+      request({ mosqueId: mosque.id, date: "2000-01-01", times: validTimes }),
     );
 
     expect(response.status).toBe(400);
@@ -180,6 +193,7 @@ describe("POST /api/admin/schedule", () => {
     const response = await POST(
       request({
         date: futureDate,
+        mosqueId: mosque.id,
         times: validTimes.filter((time) => time.prayer !== "Jumu'ah"),
       }),
     );
@@ -196,9 +210,6 @@ describe("GET /api/admin/schedule", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(getAdminSession).mockResolvedValue(adminSession);
-    vi.mocked(getSettings).mockResolvedValue({
-      timezone: "Asia/Karachi",
-    } as never);
   });
 
   it("loads the timetable applicable to the selected date", async () => {
@@ -208,22 +219,27 @@ describe("GET /api/admin/schedule", () => {
     });
 
     const response = await GET(
-      new Request(`http://localhost/api/admin/schedule?date=${futureDate}`),
+      new Request(
+        `http://localhost/api/admin/schedule?mosqueId=${mosque.id}&date=${futureDate}`,
+      ),
     );
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
       date: futureDate,
       times: validTimes,
+      mosque,
     });
-    expect(getPrayerSchedule).toHaveBeenCalledWith(futureDate);
+    expect(getPrayerSchedule).toHaveBeenCalledWith(mosque.id, futureDate);
   });
 
   it("rejects unauthenticated reads", async () => {
     vi.mocked(getAdminSession).mockResolvedValue({ user: null, access: null });
 
     const response = await GET(
-      new Request(`http://localhost/api/admin/schedule?date=${futureDate}`),
+      new Request(
+        `http://localhost/api/admin/schedule?mosqueId=${mosque.id}&date=${futureDate}`,
+      ),
     );
 
     expect(response.status).toBe(401);
@@ -232,12 +248,28 @@ describe("GET /api/admin/schedule", () => {
 
   it("rejects invalid calendar dates", async () => {
     const response = await GET(
-      new Request("http://localhost/api/admin/schedule?date=2099-02-30"),
+      new Request(
+        `http://localhost/api/admin/schedule?mosqueId=${mosque.id}&date=2099-02-30`,
+      ),
     );
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
       error: "Choose a valid effective date.",
+    });
+    expect(getPrayerSchedule).not.toHaveBeenCalled();
+  });
+
+  it("rejects reads for an unassigned mosque before loading data", async () => {
+    const response = await GET(
+      new Request(
+        "http://localhost/api/admin/schedule?mosqueId=22222222-2222-4222-8222-222222222222",
+      ),
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      error: "Access to this mosque is required.",
     });
     expect(getPrayerSchedule).not.toHaveBeenCalled();
   });

@@ -2,17 +2,21 @@ import "server-only";
 import type { User } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { AdminRole } from "@/lib/admin-policy";
+import { mapMosqueRow, type Mosque } from "@/lib/mosques";
 
 export type SafeAdmin = {
   id: string;
   email: string;
   role: AdminRole;
   active: boolean;
+  canManageMasjids: boolean;
+  mosques: Array<Pick<Mosque, "id" | "slug" | "name" | "active">>;
   createdAt: string;
 };
 
 export type AdminOverview = {
   admins: SafeAdmin[];
+  mosques: Mosque[];
   statistics: {
     totalDevices: number;
     englishDevices: number;
@@ -29,6 +33,7 @@ export type AdminOverview = {
 export class AdminConflictError extends Error {}
 export class AdminNotFoundError extends Error {}
 export class ProtectedAdminError extends Error {}
+export class MosqueAssignmentError extends Error {}
 
 function assertQuery<T>(
   result: { data: T | null; error: unknown },
@@ -64,10 +69,12 @@ export async function loadAdminOverview(): Promise<AdminOverview> {
     refreshed,
     changes,
     latest,
+    mosquesResult,
+    assignmentsResult,
   ] = await Promise.all([
     supabase
       .from("admin_members")
-      .select("id,email,role,active,created_at")
+      .select("id,email,role,active,created_at,can_manage_mosjids")
       .order("created_at", { ascending: true }),
     supabase
       .from("push_subscriptions")
@@ -98,12 +105,47 @@ export async function loadAdminOverview(): Promise<AdminOverview> {
       .order("changed_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
+    supabase
+      .from("mosques")
+      .select("id,slug,name,location,timezone,active,created_at,updated_at")
+      .order("name"),
+    supabase
+      .from("admin_mosque_access")
+      .select(
+        "admin_member_id,mosques(id,slug,name,location,timezone,active,created_at,updated_at)",
+      ),
   ]);
 
   const rows = assertQuery(adminsResult, "list admins") ?? [];
   const latestRow = assertQuery(latest, "load latest timetable change") as {
     changed_at: string;
   } | null;
+  const mosques = (assertQuery(mosquesResult, "list mosques") ?? []).map(
+    (row) => {
+      const mosque = mapMosqueRow(row);
+      if (!mosque) throw new Error("Database returned an invalid mosque record");
+      return mosque;
+    },
+  );
+  const assignments =
+    assertQuery(assignmentsResult, "list mosque assignments") ?? [];
+  const assignmentsByAdmin = new Map<
+    string,
+    Array<Pick<Mosque, "id" | "slug" | "name" | "active">>
+  >();
+  for (const assignment of assignments) {
+    const related = assignment.mosques;
+    const mosque = mapMosqueRow(Array.isArray(related) ? related[0] : related);
+    if (!mosque) continue;
+    const current = assignmentsByAdmin.get(assignment.admin_member_id) ?? [];
+    current.push({
+      id: mosque.id,
+      slug: mosque.slug,
+      name: mosque.name,
+      active: mosque.active,
+    });
+    assignmentsByAdmin.set(assignment.admin_member_id, current);
+  }
 
   return {
     admins: rows.map((row) => ({
@@ -111,8 +153,11 @@ export async function loadAdminOverview(): Promise<AdminOverview> {
       email: row.email,
       role: row.role as AdminRole,
       active: row.active,
+      canManageMasjids: row.role === "super_admin" || row.can_manage_mosjids,
+      mosques: assignmentsByAdmin.get(row.id) ?? [],
       createdAt: row.created_at,
     })),
+    mosques,
     statistics: {
       totalDevices: count(total, "count devices"),
       englishDevices: count(english, "count English devices"),
@@ -227,6 +272,85 @@ export async function deleteRegularAdmin(
   const deletion = await supabase.auth.admin.deleteUser(result.data.user_id);
   if (deletion.error)
     throw new Error("Could not delete Auth user", { cause: deletion.error });
+}
+
+async function loadMutableRegularAdmin(
+  membershipId: string,
+  actorUserId: string,
+) {
+  const supabase = createAdminClient();
+  const result = await supabase
+    .from("admin_members")
+    .select("id,user_id,role,active,can_manage_mosjids")
+    .eq("id", membershipId)
+    .maybeSingle();
+  if (result.error) {
+    throw new Error("Could not load admin membership", { cause: result.error });
+  }
+  if (!result.data) throw new AdminNotFoundError("Administrator not found");
+  if (result.data.user_id === actorUserId || result.data.role !== "admin") {
+    throw new ProtectedAdminError("This administrator cannot be changed");
+  }
+  return { supabase, member: result.data };
+}
+
+export async function setRegularAdminMosqueManagement(
+  membershipId: string,
+  enabled: boolean,
+  actorUserId: string,
+) {
+  const { supabase, member } = await loadMutableRegularAdmin(
+    membershipId,
+    actorUserId,
+  );
+  if (member.can_manage_mosjids === enabled) return;
+
+  const result = await supabase
+    .from("admin_members")
+    .update({ can_manage_mosjids: enabled })
+    .eq("id", membershipId)
+    .eq("role", "admin");
+  if (result.error) {
+    throw new Error("Could not update mosque-management access", {
+      cause: result.error,
+    });
+  }
+}
+
+export async function setRegularAdminMosqueAssignment(
+  membershipId: string,
+  mosqueId: string,
+  assigned: boolean,
+  actorUserId: string,
+) {
+  const { supabase } = await loadMutableRegularAdmin(membershipId, actorUserId);
+  const mosque = await supabase
+    .from("mosques")
+    .select("id,active")
+    .eq("id", mosqueId)
+    .maybeSingle();
+  if (mosque.error) {
+    throw new Error("Could not load mosque", { cause: mosque.error });
+  }
+  if (!mosque.data || !mosque.data.active) {
+    throw new MosqueAssignmentError("Only active mosques can be assigned");
+  }
+
+  const result = assigned
+    ? await supabase.from("admin_mosque_access").upsert(
+        { admin_member_id: membershipId, mosque_id: mosqueId },
+        { onConflict: "admin_member_id,mosque_id", ignoreDuplicates: true },
+      )
+    : await supabase
+        .from("admin_mosque_access")
+        .delete()
+        .eq("admin_member_id", membershipId)
+        .eq("mosque_id", mosqueId);
+  if (result.error) {
+    throw new Error("Could not update mosque assignment", {
+      cause: result.error,
+    });
+  }
 }
 
 export async function completeAdminSetup(user: User, password: string) {
